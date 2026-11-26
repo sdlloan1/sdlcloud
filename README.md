@@ -72,7 +72,7 @@ npm run lint
    ```
    `APP_BASE_URL` and `MAIL_FROM` are plain variables in `worker/wrangler.jsonc`.
 5. Deploy the Worker together with the built assets: `npm run deploy`
-6. Attach the domain under Workers → `sdl-app` → Custom domains.
+6. Attach the domain under Workers → `sdlcloud` → Custom domains.
 
 Without `RESEND_API_KEY` the Worker logs outgoing mail instead of sending it, so the app stays
 usable while email is not configured.
