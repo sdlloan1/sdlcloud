@@ -1,12 +1,11 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import { formatINR, formatDate, isOverdue, daysOverdue, upiQrUrl } from "@/lib/sdlUtils";
 import NeuInput from "@/components/NeuInput";
 import {
-  CheckCircle2, XCircle, Clock, X, Loader2, Handshake, ArrowDownLeft, ArrowUpRight,
-  FileDown, FileImage, Gift, TrendingUp, ChevronRight, Search, Upload
+  CheckCircle2, XCircle, X, Loader2, Handshake,
+  FileDown, FileImage, ChevronRight, Search, Upload
 } from "lucide-react";
 import PartnerDetailModal from "@/components/admin/PartnerDetailModal";
 

@@ -1,20 +1,18 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { db } from "@/api/base44Client";
 import React, { useState, useEffect, useRef } from "react";
 
-import NeuButton from "@/components/NeuButton";
 import NeuInput from "@/components/NeuInput";
 import ConfettiPopup from "@/components/ConfettiPopup";
 import { generateAgreementPdf } from "@/lib/agreementPdf";
 import ReferralCard from "@/components/ReferralCard";
-import { SDL_LOGO, formatINR, calcRepayment, getDueDate, formatDate, isOverdue, daysOverdue, generateLoanId } from "@/lib/sdlUtils";
+import { formatINR, calcRepayment, getDueDate, formatDate, isOverdue, generateLoanId } from "@/lib/sdlUtils";
 import { ensureDueDateNotifications } from "@/lib/notifications";
 import ChargeInfoButton from "@/components/ChargeInfoButton";
 import AllLoansModal from "@/components/AllLoansModal";
 import NeuPageLoader from "@/components/NeuPageLoader";
 import {
   Clock, CheckCircle2, XCircle, TrendingUp, HandCoins, ArrowRight, ArrowLeft,
-  FileDown, Users, Loader2, Sparkles, Wallet, X, ChevronRight
+  FileDown, Loader2, X, ChevronRight
 } from "lucide-react";
 
 export default function LoanPage({ user, onUserUpdate, settings, active }) {

@@ -1,9 +1,8 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import NeuInput from "@/components/NeuInput";
-import { Settings, Save, Loader2, X, ScrollText, FileText, Mail, Shield, Info, CreditCard, Smartphone, Bell } from "lucide-react";
+import { Settings, Save, Loader2, ScrollText, FileText, Mail, Shield, Info, CreditCard, Smartphone, Bell } from "lucide-react";
 import AgreementStyleEditor from "@/components/admin/AgreementStyleEditor";
 
 export default function AdminSettings() {

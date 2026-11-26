@@ -1,15 +1,14 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import NeuButton from "@/components/NeuButton";
 import NeuInput from "@/components/NeuInput";
-import { SDL_LOGO, formatDate, formatAddress, getShareableDomain } from "@/lib/sdlUtils";
+import { formatDate, formatAddress, getShareableDomain } from "@/lib/sdlUtils";
 import {
   User, Phone, CreditCard, Mail, Wallet, CalendarDays, Users, Share2, MessageSquare,
   Upload, Camera, Check, Loader2, X, Shield, Info, ChevronRight, Copy, MessageCircle, LogOut,
-  FileText, ChevronDown, ChevronUp, Download, Instagram, MapPin, Handshake, Send, Plus, ArrowLeft, Clock, Trash2
+  FileText, ChevronDown, ChevronUp, Download, Instagram, MapPin, Handshake, Send, Plus, ArrowLeft, Trash2
   } from "lucide-react";
   import { Image } from "@/components/ui/image";
   import DownloadAppModal from "@/components/DownloadAppModal";

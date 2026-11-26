@@ -1,0 +1,451 @@
+CREATE TABLE IF NOT EXISTS admin_capital (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "type" TEXT,
+  "amount" REAL,
+  "balance_after" REAL,
+  "description" TEXT,
+  "related_loan_id" TEXT,
+  "related_user_id" TEXT,
+  "month_key" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_capital_created_date ON admin_capital("created_date");
+
+CREATE TABLE IF NOT EXISTS app_download (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "user_id" TEXT,
+  "user_name" TEXT,
+  "platform" TEXT,
+  "device_type" TEXT,
+  "device_model" TEXT,
+  "os_version" TEXT,
+  "browser" TEXT,
+  "country" TEXT,
+  "region" TEXT,
+  "city" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_app_download_created_date ON app_download("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_app_download_user_id ON app_download("user_id");
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "terms_conditions" TEXT,
+  "agreement_template" TEXT,
+  "agreement_style" TEXT,
+  "loan_email_format" TEXT,
+  "closure_email_format" TEXT,
+  "loan_email_enabled" INTEGER,
+  "closure_email_enabled" INTEGER,
+  "reminder_email_enabled" INTEGER,
+  "reminder_website_url" TEXT,
+  "privacy_policy" TEXT,
+  "about_us" TEXT,
+  "admin_upi_id" TEXT,
+  "admin_upi_name" TEXT,
+  "referral_percentage" REAL,
+  "savings_percentage" REAL,
+  "interest_rate" REAL,
+  "portal_charge_percentage" REAL,
+  "processing_fee_percentage" REAL,
+  "partner_profit_percentage" REAL,
+  "partner_overdue_profit_percentage" REAL,
+  "overdue_daily_rate" REAL,
+  "kyc_daily_limit" REAL,
+  "lender_name" TEXT,
+  "lender_pan" TEXT,
+  "lender_email" TEXT,
+  "lender_address" TEXT,
+  "shareable_domain" TEXT,
+  "apk_android_url" TEXT,
+  "apk_ios_url" TEXT,
+  "payment_apps" TEXT,
+  "admin_notes" TEXT,
+  "monthly_target" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_app_settings_created_date ON app_settings("created_date");
+
+CREATE TABLE IF NOT EXISTS app_update (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "version" TEXT,
+  "download_url" TEXT,
+  "notes" TEXT,
+  "is_active" INTEGER,
+  "reminder_days" REAL,
+  "sent_at" TEXT,
+  "sent_count" REAL
+);
+
+CREATE INDEX IF NOT EXISTS idx_app_update_created_date ON app_update("created_date");
+
+CREATE TABLE IF NOT EXISTS app_visit (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "user_id" TEXT,
+  "user_name" TEXT,
+  "page" TEXT,
+  "device_type" TEXT,
+  "device_model" TEXT,
+  "os_version" TEXT,
+  "browser" TEXT,
+  "country" TEXT,
+  "region" TEXT,
+  "city" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_app_visit_created_date ON app_visit("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_app_visit_user_id ON app_visit("user_id");
+
+CREATE TABLE IF NOT EXISTS loan_application (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "user_id" TEXT,
+  "user_name" TEXT,
+  "user_mobile" TEXT,
+  "user_upi_id" TEXT,
+  "loan_id" TEXT,
+  "loan_date" TEXT,
+  "amount" REAL,
+  "interest_amount" REAL,
+  "repayment_amount" REAL,
+  "original_repayment_amount" REAL,
+  "waiver_amount" REAL,
+  "overdue_waived" INTEGER,
+  "due_date" TEXT,
+  "status" TEXT,
+  "agreement_pdf_url" TEXT,
+  "disbursement_screenshot" TEXT,
+  "call_recording_url" TEXT,
+  "additional_files" TEXT,
+  "repayment_screenshot" TEXT,
+  "repayment_screenshots" TEXT,
+  "admin_rejection_reason" TEXT,
+  "disbursed_date" TEXT,
+  "repaid_date" TEXT,
+  "overdue_days" REAL,
+  "referrer_earning_credited" INTEGER,
+  "referrer_id" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_loan_application_created_date ON loan_application("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_loan_application_user_id ON loan_application("user_id");
+
+CREATE INDEX IF NOT EXISTS idx_loan_application_status ON loan_application("status");
+
+CREATE INDEX IF NOT EXISTS idx_loan_application_referrer_id ON loan_application("referrer_id");
+
+CREATE INDEX IF NOT EXISTS idx_loan_application_loan_id ON loan_application("loan_id");
+
+CREATE TABLE IF NOT EXISTS monthly_target (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "month_key" TEXT,
+  "amount" REAL
+);
+
+CREATE INDEX IF NOT EXISTS idx_monthly_target_created_date ON monthly_target("created_date");
+
+CREATE TABLE IF NOT EXISTS notification (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "user_id" TEXT,
+  "title" TEXT,
+  "message" TEXT,
+  "type" TEXT,
+  "read" INTEGER,
+  "related_id" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_notification_created_date ON notification("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_notification_user_id ON notification("user_id");
+
+CREATE TABLE IF NOT EXISTS partner_deposit (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "user_id" TEXT,
+  "user_name" TEXT,
+  "amount" REAL,
+  "status" TEXT,
+  "agreement_pdf_url" TEXT,
+  "payment_screenshot" TEXT,
+  "rejection_reason" TEXT,
+  "approved_date" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_partner_deposit_created_date ON partner_deposit("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_partner_deposit_user_id ON partner_deposit("user_id");
+
+CREATE INDEX IF NOT EXISTS idx_partner_deposit_status ON partner_deposit("status");
+
+CREATE TABLE IF NOT EXISTS partner_loan_assignment (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "loan_id" TEXT,
+  "partner_id" TEXT,
+  "loan_amount" REAL,
+  "repayment_amount" REAL,
+  "due_date" TEXT,
+  "profit_earned" REAL,
+  "overdue_bonus" REAL,
+  "status" TEXT,
+  "repaid_date" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_partner_loan_assignment_created_date ON partner_loan_assignment("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_partner_loan_assignment_status ON partner_loan_assignment("status");
+
+CREATE INDEX IF NOT EXISTS idx_partner_loan_assignment_partner_id ON partner_loan_assignment("partner_id");
+
+CREATE INDEX IF NOT EXISTS idx_partner_loan_assignment_loan_id ON partner_loan_assignment("loan_id");
+
+CREATE TABLE IF NOT EXISTS partner_request (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "user_id" TEXT,
+  "user_name" TEXT,
+  "user_mobile" TEXT,
+  "user_email" TEXT,
+  "user_pan" TEXT,
+  "user_upi_id" TEXT,
+  "user_address" TEXT,
+  "status" TEXT,
+  "rejection_reason" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_partner_request_created_date ON partner_request("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_partner_request_user_id ON partner_request("user_id");
+
+CREATE INDEX IF NOT EXISTS idx_partner_request_status ON partner_request("status");
+
+CREATE TABLE IF NOT EXISTS partner_withdrawal (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "user_id" TEXT,
+  "user_name" TEXT,
+  "user_upi_id" TEXT,
+  "amount" REAL,
+  "withdrawal_type" TEXT,
+  "status" TEXT,
+  "rejection_reason" TEXT,
+  "paid_date" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_partner_withdrawal_created_date ON partner_withdrawal("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_partner_withdrawal_user_id ON partner_withdrawal("user_id");
+
+CREATE INDEX IF NOT EXISTS idx_partner_withdrawal_status ON partner_withdrawal("status");
+
+CREATE TABLE IF NOT EXISTS repayment_reminder (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "loan_id" TEXT,
+  "loan_code" TEXT,
+  "user_id" TEXT,
+  "user_name" TEXT,
+  "user_mobile" TEXT,
+  "user_email" TEXT,
+  "stage" TEXT,
+  "stage_label" TEXT,
+  "scheduled_for" TEXT,
+  "due_date" TEXT,
+  "loan_amount" REAL,
+  "repayment_amount" REAL,
+  "overdue_days" REAL,
+  "overdue_amount" REAL,
+  "total_payable" REAL,
+  "whatsapp_message" TEXT,
+  "email_status" TEXT,
+  "email_sent_at" TEXT,
+  "email_error" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_repayment_reminder_created_date ON repayment_reminder("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_repayment_reminder_user_id ON repayment_reminder("user_id");
+
+CREATE INDEX IF NOT EXISTS idx_repayment_reminder_loan_id ON repayment_reminder("loan_id");
+
+CREATE TABLE IF NOT EXISTS support_ticket (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "user_id" TEXT,
+  "user_name" TEXT,
+  "user_mobile" TEXT,
+  "message" TEXT,
+  "screenshot_url" TEXT,
+  "status" TEXT,
+  "admin_response" TEXT,
+  "conversation" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_support_ticket_created_date ON support_ticket("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_support_ticket_user_id ON support_ticket("user_id");
+
+CREATE INDEX IF NOT EXISTS idx_support_ticket_status ON support_ticket("status");
+
+CREATE TABLE IF NOT EXISTS team_member (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "name" TEXT,
+  "education" TEXT,
+  "role" TEXT,
+  "photo_url" TEXT,
+  "order" REAL,
+  "upi_id" TEXT,
+  "upi_enabled" INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_team_member_created_date ON team_member("created_date");
+
+CREATE TABLE IF NOT EXISTS users (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "role" TEXT,
+  "mobile_number" TEXT,
+  "pan_number" TEXT,
+  "upi_id" TEXT,
+  "salary_date" INTEGER,
+  "referrer_name" TEXT,
+  "referrer_mobile" TEXT,
+  "referrer_id" TEXT,
+  "address_line1" TEXT,
+  "address_line2" TEXT,
+  "city" TEXT,
+  "state" TEXT,
+  "pincode" TEXT,
+  "kyc_status" TEXT,
+  "kyc_attempt_count" REAL,
+  "kyc_attempt_date" TEXT,
+  "kyc_blocked_until" TEXT,
+  "rejection_reason" TEXT,
+  "loan_limit" REAL,
+  "profile_picture" TEXT,
+  "pan_card_image" TEXT,
+  "aadhaar_front_image" TEXT,
+  "aadhaar_back_image" TEXT,
+  "salary_slip_image" TEXT,
+  "additional_documents" TEXT,
+  "salary_date_set_date" TEXT,
+  "salary_slip_updated_date" TEXT,
+  "terms_accepted" INTEGER,
+  "account_status" TEXT,
+  "registration_complete" INTEGER,
+  "limit_acknowledged" REAL,
+  "display_name" TEXT,
+  "partner_status" TEXT,
+  "app_installed" INTEGER,
+  "app_version" TEXT,
+  "email" TEXT NOT NULL UNIQUE,
+  "full_name" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'active',
+  "password_hash" TEXT,
+  "totp_secret" TEXT,
+  "totp_enabled" INTEGER NOT NULL DEFAULT 0,
+  "recovery_codes" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_created_date ON users("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_users_referrer_id ON users("referrer_id");
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users("email");
+
+CREATE INDEX IF NOT EXISTS idx_users_role ON users("role");
+
+CREATE INDEX IF NOT EXISTS idx_users_kyc_status ON users("kyc_status");
+
+CREATE INDEX IF NOT EXISTS idx_users_mobile_number ON users("mobile_number");
+
+CREATE TABLE IF NOT EXISTS wallet_transaction (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "user_id" TEXT,
+  "type" TEXT,
+  "amount" REAL,
+  "status" TEXT,
+  "screenshot_url" TEXT,
+  "description" TEXT,
+  "related_loan_id" TEXT,
+  "admin_reason" TEXT,
+  "processed_date" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_wallet_transaction_created_date ON wallet_transaction("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_wallet_transaction_user_id ON wallet_transaction("user_id");
+
+CREATE INDEX IF NOT EXISTS idx_wallet_transaction_status ON wallet_transaction("status");
+
+CREATE TABLE IF NOT EXISTS whats_app_log (
+  "id" TEXT PRIMARY KEY,
+  "created_date" TEXT NOT NULL,
+  "updated_date" TEXT NOT NULL,
+  "created_by_id" TEXT,
+  "user_id" TEXT,
+  "user_name" TEXT,
+  "user_mobile" TEXT,
+  "loan_id" TEXT,
+  "message_type" TEXT,
+  "message" TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_whats_app_log_created_date ON whats_app_log("created_date");
+
+CREATE INDEX IF NOT EXISTS idx_whats_app_log_user_id ON whats_app_log("user_id");
+
+CREATE INDEX IF NOT EXISTS idx_whats_app_log_loan_id ON whats_app_log("loan_id");
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  token TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  used_at TEXT
+);

@@ -1,17 +1,20 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock, LogIn, ShieldCheck } from "lucide-react";
 import NeuAuthLayout from "@/components/NeuAuthLayout";
 import NeuInput from "@/components/NeuInput";
 import PasswordInput from "@/components/PasswordInput";
 import NeuButton from "@/components/NeuButton";
-import { Mail, Lock, LogIn } from "lucide-react";
+import { db } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const { checkUserAuth } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [needsCode, setNeedsCode] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -20,10 +23,16 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await db.auth.loginViaEmailPassword(email, password);
-      window.location.href = "/";
+      await db.auth.loginViaEmailPassword(email, password, code || undefined);
+      await checkUserAuth();
+      navigate("/", { replace: true });
     } catch (err) {
-      setError(err.message || "Invalid email or password");
+      if (err.code === "mfa_required") {
+        setNeedsCode(true);
+        setError("");
+      } else {
+        setError(err.message || "Invalid email or password");
+      }
     } finally {
       setLoading(false);
     }
@@ -73,6 +82,20 @@ export default function Login() {
             required
           />
         </div>
+        {needsCode && (
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-2 ml-1">Two-factor code</label>
+            <NeuInput
+              icon={ShieldCheck}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="123456"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              required
+            />
+          </div>
+        )}
         <NeuButton type="submit" variant="gradient" loading={loading} className="w-full h-12 rounded-2xl mt-2">
           {!loading && <LogIn className="w-4 h-4" />}
           {loading ? "Logging in..." : "Log In"}

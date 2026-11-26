@@ -1,5 +1,4 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { db } from "@/api/base44Client";
 import React, { useState } from "react";
 
 import NeuButton from "@/components/NeuButton";
@@ -7,7 +6,7 @@ import NeuInput from "@/components/NeuInput";
 import PaymentAppsGrid from "@/components/PaymentAppsGrid";
 import { generatePartnerAgreementPdf } from "@/lib/partnerAgreementPdf";
 import { formatINR, upiQrUrl } from "@/lib/sdlUtils";
-import { FileDown, CheckCircle2, Upload, Loader2, X, ArrowLeft, ArrowRight, Lock } from "lucide-react";
+import { FileDown, CheckCircle2, Upload, Loader2, X, ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function PartnerDepositModal({ user, settings, onClose, onSubmitted }) {
   const [step, setStep] = useState(1);

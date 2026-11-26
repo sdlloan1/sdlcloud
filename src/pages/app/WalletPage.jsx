@@ -1,13 +1,12 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import NeuButton from "@/components/NeuButton";
 import NeuInput from "@/components/NeuInput";
-import { formatINR, upiQrUrl, formatDate, monthKey, resolvePayee } from "@/lib/sdlUtils";
+import { formatINR, upiQrUrl, formatDate, resolvePayee } from "@/lib/sdlUtils";
 import {
   Wallet as WalletIcon, ArrowDownLeft, ArrowUpRight, Plus, Upload, Loader2,
-  CheckCircle2, X, Clock, Gift, Sparkles, Lock, Unlock, ChevronDown
+  CheckCircle2, X, Clock, Gift, Sparkles, Lock, ChevronDown
 } from "lucide-react";
 import NeuPageLoader from "@/components/NeuPageLoader";
 import UpiVerifiedBadge from "@/components/UpiVerifiedBadge";

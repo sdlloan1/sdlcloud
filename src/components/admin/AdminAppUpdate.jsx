@@ -1,9 +1,8 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import { formatDate } from "@/lib/sdlUtils";
-import { Smartphone, Send, Loader2, CheckCircle2, Trash2, ExternalLink, History, AlertTriangle } from "lucide-react";
+import { Smartphone, Send, Loader2, CheckCircle2, ExternalLink, History, AlertTriangle } from "lucide-react";
 
 export default function AdminAppUpdate() {
   const [version, setVersion] = useState("");

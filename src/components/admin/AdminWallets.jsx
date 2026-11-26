@@ -1,10 +1,9 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import { formatINR, formatDate } from "@/lib/sdlUtils";
 import NeuInput from "@/components/NeuInput";
-import { Wallet, CheckCircle2, XCircle, Clock, X, ArrowDownLeft, ArrowUpRight, Loader2, Settings2, Plus, ScanLine } from "lucide-react";
+import { CheckCircle2, XCircle, X, ArrowDownLeft, ArrowUpRight, Loader2, Plus, ScanLine } from "lucide-react";
 import { createNotification } from "@/lib/notifications";
 
 export default function AdminWallets() {

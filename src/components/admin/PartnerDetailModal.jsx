@@ -1,9 +1,8 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import { formatINR, formatDate, isOverdue, daysOverdue } from "@/lib/sdlUtils";
-import { X, CheckCircle2, FileDown, FileImage, LockOpen, Lock, Loader2 } from "lucide-react";
+import { X, CheckCircle2, FileDown, FileImage, LockOpen, Lock } from "lucide-react";
 
 export default function PartnerDetailModal({ partner, onClose }) {
   const [tab, setTab] = useState("assign");

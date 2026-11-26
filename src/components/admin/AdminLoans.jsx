@@ -1,10 +1,8 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import { formatINR, formatDate, upiQrUrl, isOverdue, daysOverdue, getWhatsappUrl, payableTotal } from "@/lib/sdlUtils";
-import NeuInput from "@/components/NeuInput";
-import { HandCoins, CheckCircle2, Clock, X, XCircle, Loader2, ScanLine, ArrowRight, ArrowLeft, Upload, FileDown, FileImage, Plus, FileAudio, Download, Pencil } from "lucide-react";
+import { CheckCircle2, X, XCircle, Loader2, ScanLine, Upload, FileDown, FileImage, Plus, FileAudio, Download, Pencil } from "lucide-react";
 import EditRepaymentModal from "@/components/admin/EditRepaymentModal";
 import { createNotification } from "@/lib/notifications";
 import WhatsAppShareModal from "@/components/WhatsAppShareModal";

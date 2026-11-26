@@ -1,9 +1,8 @@
-const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
-
+import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import NeuInput from "@/components/NeuInput";
-import { UsersRound, Plus, Trash2, X, Loader2, Upload, Camera, ChevronUp, ChevronDown, Pencil } from "lucide-react";
+import { Plus, Trash2, X, Loader2, Camera, ChevronUp, ChevronDown, Pencil } from "lucide-react";
 
 export default function AdminTeam() {
   const [team, setTeam] = useState([]);
