@@ -5,7 +5,7 @@ import NeuButton from "@/components/NeuButton";
 import NeuInput from "@/components/NeuInput";
 import {
   User, Phone, CreditCard, Mail, Upload, Wallet, CalendarDays,
-  Users, ArrowRight, ArrowLeft, CheckCircle2, Image as ImageIcon, Loader2, XCircle
+  Users, ArrowRight, ArrowLeft, CheckCircle2, Loader2, XCircle
 } from "lucide-react";
 import AddressFields from "@/components/AddressFields";
 

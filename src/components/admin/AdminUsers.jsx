@@ -2,8 +2,7 @@ import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import { formatINR } from "@/lib/sdlUtils";
-import {
-  Users, CheckCircle2, XCircle, Clock, Pause, Search
+import { CheckCircle2, XCircle, Clock, Pause, Search
 } from "lucide-react";
 import UserDetailTabs from "@/components/admin/UserDetailTabs";
 

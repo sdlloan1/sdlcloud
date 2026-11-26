@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { formatINR, calcRepayment } from "@/lib/sdlUtils";
 import NeuInput from "@/components/NeuInput";
 import { PiggyBank, TrendingUp, Wallet, Calculator, Target, Loader2, ChevronDown } from "lucide-react";
-import { ComposedChart, Area, Bar, Line, ReferenceLine, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+import { ComposedChart, Area, Bar, ReferenceLine, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 
 export default function InvestmentStrategy() {
   const [settings, setSettings] = useState(null);

@@ -1,7 +1,7 @@
 import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
-import { SDL_LOGO, formatINR, upiQrUrl, formatDate, isOverdue, daysOverdue, calcOverdue, resolvePayee } from "@/lib/sdlUtils";
+import { formatINR, upiQrUrl, formatDate, isOverdue, daysOverdue, calcOverdue, resolvePayee } from "@/lib/sdlUtils";
 import { downloadAllBrandedQrs } from "@/lib/qrBranded";
 import ChargeInfoButton from "@/components/ChargeInfoButton";
 import AllLoansModal from "@/components/AllLoansModal";

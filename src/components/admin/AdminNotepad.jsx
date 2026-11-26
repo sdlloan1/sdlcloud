@@ -1,7 +1,7 @@
 import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
-import { StickyNote, Save, Loader2, Check, Trash2, Plus, Copy, Pencil, X, ChevronRight } from "lucide-react";
+import { StickyNote, Loader2, Check, Trash2, Plus, Copy, Pencil, X, ChevronRight } from "lucide-react";
 
 function noteTitle(n) {
   return (n.title || "").trim() || (n.text || "").split("\n")[0].slice(0, 60) || "Untitled note";

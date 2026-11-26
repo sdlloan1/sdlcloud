@@ -4,12 +4,11 @@ import React, { useState, useEffect } from "react";
 import { formatINR, formatDate, isOverdue, daysOverdue } from "@/lib/sdlUtils";
 import PartnerDepositModal from "@/components/partner/PartnerDepositModal";
 import PartnerWithdrawModal from "@/components/partner/PartnerWithdrawModal";
-import NeuSkeleton from "@/components/NeuSkeleton";
 import { useNavigate } from "react-router-dom";
 import { SDL_LOGO } from "@/lib/sdlUtils";
 import {
   Wallet, TrendingUp, Lock, HandCoins, ArrowDownLeft, ArrowUpRight, Gift,
-  Clock, CheckCircle2, AlertTriangle, ArrowRight, History
+  Clock, AlertTriangle, ArrowRight, History
 } from "lucide-react";
 
 export default function PartnerDashboard({ user, settings, onUserUpdate }) {

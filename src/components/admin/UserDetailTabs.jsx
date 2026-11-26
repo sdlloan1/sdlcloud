@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { formatINR, formatDate, formatAddress, getWhatsappUrl } from "@/lib/sdlUtils";
 import NeuInput from "@/components/NeuInput";
 import WhatsAppShareModal from "@/components/WhatsAppShareModal";
-import { kycApprovedMessage, kycDonePendingLimitMessage, limitIncreasedMessage } from "@/lib/whatsappMessages";
+import { kycDonePendingLimitMessage, limitIncreasedMessage } from "@/lib/whatsappMessages";
 import { logWhatsApp } from "@/lib/logWhatsApp";
 import {
   CheckCircle2, XCircle, Pause, Play, X, TrendingUp, FileImage,

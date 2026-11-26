@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { formatDate, formatINR, getWhatsappUrl } from "@/lib/sdlUtils";
 import { repaymentReminderMessage } from "@/lib/whatsappMessages";
 import AdminNotepad from "@/components/admin/AdminNotepad";
-import { Search, Copy, Check, MessageCircle, X, RefreshCw, Loader2, Bell, CalendarClock } from "lucide-react";
+import { Search, Copy, Check, MessageCircle, X, RefreshCw, Loader2, Bell } from "lucide-react";
 
 const TYPE_LABELS = {
   kyc_approved: { label: "KYC Approved", color: "bg-green-100 text-sdl-green" },

@@ -6,7 +6,7 @@ import NeuInput from "@/components/NeuInput";
 import PaymentAppsGrid from "@/components/PaymentAppsGrid";
 import { generatePartnerAgreementPdf } from "@/lib/partnerAgreementPdf";
 import { formatINR, upiQrUrl } from "@/lib/sdlUtils";
-import { FileDown, CheckCircle2, Upload, Loader2, X, ArrowLeft, ArrowRight, Lock } from "lucide-react";
+import { FileDown, CheckCircle2, Upload, Loader2, X, ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function PartnerDepositModal({ user, settings, onClose, onSubmitted }) {
   const [step, setStep] = useState(1);

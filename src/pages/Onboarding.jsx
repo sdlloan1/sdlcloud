@@ -1,4 +1,3 @@
-import { db } from "@/api/base44Client";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowLeft, HandCoins, ShieldCheck, Users, Wallet, Sparkles, Download } from "lucide-react";

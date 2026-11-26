@@ -2,7 +2,7 @@ import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import { formatDate } from "@/lib/sdlUtils";
-import { Smartphone, Send, Loader2, CheckCircle2, Trash2, ExternalLink, History, AlertTriangle } from "lucide-react";
+import { Smartphone, Send, Loader2, CheckCircle2, ExternalLink, History, AlertTriangle } from "lucide-react";
 
 export default function AdminAppUpdate() {
   const [version, setVersion] = useState("");

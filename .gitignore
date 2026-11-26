@@ -30,3 +30,6 @@ dist-ssr
 .env
 .vite
 base44/.app.jsonc
+
+# Wrangler dev state (local D1/R2 emulation, build temp)
+worker/.wrangler/

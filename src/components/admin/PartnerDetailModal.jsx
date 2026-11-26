@@ -2,7 +2,7 @@ import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import { formatINR, formatDate, isOverdue, daysOverdue } from "@/lib/sdlUtils";
-import { X, CheckCircle2, FileDown, FileImage, LockOpen, Lock, Loader2 } from "lucide-react";
+import { X, CheckCircle2, FileDown, FileImage, LockOpen, Lock } from "lucide-react";
 
 export default function PartnerDetailModal({ partner, onClose }) {
   const [tab, setTab] = useState("assign");

@@ -20,15 +20,15 @@ npx skills add base44/skills
 ## Key Files
 
 - `src/`: frontend application source.
-- `src/api/base44Client.js`: frontend Base44 SDK client.
-- `vite.config.js`: Vite config and Base44 Vite plugin setup.
+- `src/api/base44Client.js`: frontend client for the app's own Worker API.
+- `worker/src/`: Cloudflare Worker API (auth, entities, functions, files) on D1/R2.
+- `vite.config.js`: Vite config; `/api` is proxied to the Worker dev server.
 - `.env.local`: local-only environment values; never commit secrets.
 
 ## Working Notes
 
-- Use `base44 dev` as the default local development command when you need the local Base44 backend. It can run the backend and frontend together.
-- When docs or code mention the frontend being started automatically, that usually means the Base44 project config includes `site.serveCommand`, for example `"serveCommand": "npm run dev"` in `base44/config.jsonc`.
-- Use `npm run dev` only for frontend-only work against the hosted Base44 backend.
-- Prefer the existing Base44 CLI workflow over adding new npm scripts for Base44-specific tasks.
-- Reuse the existing SDK client and Vite plugin patterns before adding new Base44 integration paths.
+- The backend runs on Cloudflare Workers. Local development is `npm run dev:api` (Worker on :8787, local D1) plus `npm run dev` (Vite on :3000, proxies `/api`).
+- Apply schema changes with `npm run db:migrate:local`; regenerate the schema from `base44/entities/` with `npm run entities:generate`.
+- `AUTH_SECRET` must be supplied to the Worker for sessions to work (`--var AUTH_SECRET:...` or `worker/.dev.vars`).
+- Reuse the existing API client in `src/api/base44Client.js` before adding new API paths.
 - Run the relevant checks from `package.json` before finishing code changes.

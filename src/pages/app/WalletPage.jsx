@@ -3,10 +3,10 @@ import React, { useState, useEffect } from "react";
 
 import NeuButton from "@/components/NeuButton";
 import NeuInput from "@/components/NeuInput";
-import { formatINR, upiQrUrl, formatDate, monthKey, resolvePayee } from "@/lib/sdlUtils";
+import { formatINR, upiQrUrl, formatDate, resolvePayee } from "@/lib/sdlUtils";
 import {
   Wallet as WalletIcon, ArrowDownLeft, ArrowUpRight, Plus, Upload, Loader2,
-  CheckCircle2, X, Clock, Gift, Sparkles, Lock, Unlock, ChevronDown
+  CheckCircle2, X, Clock, Gift, Sparkles, Lock, ChevronDown
 } from "lucide-react";
 import NeuPageLoader from "@/components/NeuPageLoader";
 import UpiVerifiedBadge from "@/components/UpiVerifiedBadge";

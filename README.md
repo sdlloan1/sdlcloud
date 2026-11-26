@@ -1,77 +1,94 @@
-# Base44 Project
+# SDL — Shubh Dhan Lakshmi
 
-Use this repository to run and edit the app locally, then publish changes back through db.
+Salary-backed lending app: a React single-page app served by a Cloudflare Worker, with
+Cloudflare D1 (SQLite) for data and R2 for uploaded files.
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+## Repository layout
 
-## Prerequisites
+- `src/` — React app (Vite). `src/api/base44Client.js` is the client for the app's own API.
+- `worker/src/` — the Cloudflare Worker: `/api/*` routes (auth, entities, functions, files),
+  entity store, D1 access, email.
+- `worker/migrations/` — D1 schema, generated from the entity definitions.
+- `base44/entities/` — entity definitions (source of the schema).
+- `public/` — static files copied into `dist/` at build time (e.g. `manifest.json`).
 
-1. Clone the repository using the project's Git URL.
-2. Navigate to the project directory.
-3. Install dependencies: `npm install`.
-4. Install the Base44 CLI: `npm install -g base44@latest`.
+## Run locally
 
-See the [Base44 CLI docs](https://docs.db.com/developers/references/cli/get-started/overview) if you want to run Base44 commands directly.
-
-## Run Locally
-
-Run the full local development environment from the project root:
-
-```bash
-base44 dev
-```
-
-`base44 dev` starts the local Base44 development backend and, when this app is configured for it, also starts the frontend dev server for you. Use the frontend URL printed by the command.
-
-For example, when the Base44 project config includes a `serveCommand`, `base44 dev` can launch the frontend too:
-
-```json5
-{
-  "site": {
-    "serveCommand": "npm run dev"
-  }
-}
-```
-
-In a Base44 project this lives in `base44/config.jsonc`.
-
-## Run Only The Frontend
-
-If you only want to work on the frontend against the hosted Base44 backend, run:
+Install dependencies once, apply the D1 migrations to the local SQLite database, then run the
+Worker API and the Vite dev server:
 
 ```bash
-npm run dev
+npm install
+npm run db:migrate:local   # apply worker/migrations to the local D1 database
+npm run dev:api            # Worker API on http://localhost:8787 (local D1 + R2 emulation)
+npm run dev                # Vite on http://localhost:3000, proxies /api to :8787
 ```
 
-Open the local URL printed by Vite.
-
-## Use The Hosted Backend
-
-For frontend-only development, create or update `.env.local` in the project root:
+`AUTH_SECRET` signs session tokens and is required for login. Pass a development value to the
+Worker (or put it in an untracked `worker/.dev.vars`):
 
 ```bash
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=https://your-app.db.app
+npx wrangler dev --config worker/wrangler.jsonc --port 8787 --var AUTH_SECRET:$(openssl rand -hex 32)
 ```
 
-`VITE_BASE44_APP_ID` identifies the Base44 app.
-
-`VITE_BASE44_APP_BASE_URL` tells the Base44 Vite plugin where to send local `/api` requests. Point it at your deployed Base44 app URL when you want the local frontend to use the hosted backend.
-
-When you use `base44 dev`, the command injects the local Base44 values for you, so `.env.local` is mainly needed for frontend-only workflows.
-
-## Publish Your Changes
-
-After pushing your changes to git, open the Base44 dashboard and publish the app:
+Cron triggers (nightly repayment reminders) do not fire in local development. Run one by hand:
 
 ```bash
-base44 dashboard open
+curl "http://localhost:8787/cdn-cgi/local/scheduled"
 ```
 
-## Docs & Support
+To preview the production bundle exactly as deployed, build and let the Worker serve `dist/`:
 
-Documentation: [https://docs.db.com/Integrations/Using-GitHub](https://docs.db.com/Integrations/Using-GitHub)
+```bash
+npm run build
+npx wrangler dev --config worker/wrangler.jsonc --port 3000
+```
 
-Base44 CLI command reference: [https://docs.db.com/developers/references/cli/commands/introduction](https://docs.db.com/developers/references/cli/commands/introduction)
+## Checks
 
-Support: [https://app.db.com/support](https://app.db.com/support)
+```bash
+npm run lint
+```
+
+## Deploy to Cloudflare
+
+1. `npx wrangler login`
+2. Create the database and bucket, then put their ids/names in `worker/wrangler.jsonc`:
+   ```bash
+   npx wrangler d1 create sdl
+   npx wrangler r2 bucket create sdl-files
+   ```
+3. Apply the schema to the remote database: `npm run db:migrate`
+4. Add the secrets the Worker reads:
+   ```bash
+   npx wrangler secret put AUTH_SECRET --config worker/wrangler.jsonc
+   npx wrangler secret put RESEND_API_KEY --config worker/wrangler.jsonc      # transactional email
+   npx wrangler secret put GMAIL_CLIENT_ID --config worker/wrangler.jsonc     # Gmail send-as integration
+   npx wrangler secret put GMAIL_CLIENT_SECRET --config worker/wrangler.jsonc
+   npx wrangler secret put GMAIL_REFRESH_TOKEN --config worker/wrangler.jsonc
+   npx wrangler secret put GOOGLE_CLIENT_ID --config worker/wrangler.jsonc    # Sheets export
+   npx wrangler secret put GOOGLE_CLIENT_SECRET --config worker/wrangler.jsonc
+   npx wrangler secret put GOOGLE_SHEETS_REFRESH_TOKEN --config worker/wrangler.jsonc
+   ```
+   `APP_BASE_URL` and `MAIL_FROM` are plain variables in `worker/wrangler.jsonc`.
+5. Deploy the Worker together with the built assets: `npm run deploy`
+6. Attach the domain under Workers → `sdl-app` → Custom domains.
+
+Without `RESEND_API_KEY` the Worker logs outgoing mail instead of sending it, so the app stays
+usable while email is not configured.
+
+## Data cutover from Base44
+
+The Worker no longer talks to the Base44 backend. To move production data:
+
+1. Regenerate the schema after any entity change: `npm run entities:generate` (rewrites
+   `worker/migrations/0001_init.sql` and `worker/src/entities.generated.js` from `base44/entities/`).
+2. Export each entity from the Base44 dashboard as JSON, map it to the table columns, and load it
+   with `npx wrangler d1 execute DB --remote --config worker/wrangler.jsonc --file <file.sql>`.
+3. Re-upload files that lived in Base44 storage (loan agreements, screenshots) to the R2 bucket.
+4. Set `AUTH_SECRET` once and keep it stable — changing it signs every user out.
+
+## Legacy Base44 workflow
+
+The Base44 CLI (`base44 dev`, publishing through the dashboard) belongs to the previous hosting
+setup and is not used by this Worker-based app.
