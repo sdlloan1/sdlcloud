@@ -1,6 +1,6 @@
 // Shared HTML email helpers used by SDL email-sending backend functions.
 
-const LOGO_URL = "https://media.db.com/images/public/6a65ccde323b932e9e9dc990/42c50083d_applogo.png";
+const LOGO_URL = "https://media.base44.com/images/public/6a65ccde323b932e9e9dc990/42c50083d_applogo.png";
 
 export function logoImg(size = 76) {
   return `<img src="${LOGO_URL}" alt="SDL" width="${size}" height="${size}" style="border-radius:18px; display:block; margin:0 auto 10px auto;" />`;
