@@ -1,19 +1,25 @@
-
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// https://vite.dev/config/
+// The SPA is served by the Cloudflare Worker in production; locally the API runs
+// on the Worker dev server (npm run dev:api) and Vite proxies /api to it.
 export default defineConfig({
-  plugins: [
-    base44({
-      // Support for legacy code that imports the base44 SDK with @/integrations, @/entities, etc.
-      // can be removed if the code has been updated to use the new SDK imports from @base44/sdk
-      legacySDKImports: process.env.BASE44_LEGACY_SDK_IMPORTS === 'true',
-      hmrNotifier: true,
-      navigationNotifier: true,
-      analyticsTracker: true,
-      visualEditAgent: true
-    }),
-    react(),
-  ]
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(path.dirname(fileURLToPath(import.meta.url)), './src'),
+    },
+  },
+  server: {
+    host: true,
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: process.env.API_DEV_URL || 'http://127.0.0.1:8787',
+        changeOrigin: true,
+      },
+    },
+  },
 });

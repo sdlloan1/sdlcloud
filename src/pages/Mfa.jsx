@@ -1,126 +1,184 @@
 import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, Lock, Mail } from "lucide-react";
-import GoogleIcon from "@/components/GoogleIcon";
-import MfaFlow from "@/components/MfaFlow";
-import MfaManage from "@/components/MfaManage";
-import { MfaHeader, MfaNotice, MfaScreen, useAppInfo } from "@/components/MfaParts";
-import { finishSignIn, resumeMfa, signInToManageMfa, signInWithProvider } from "@/lib/authMfaFlow";
-import { safeReturnTo } from "@/lib/authReturnTo";
+import { Link } from "react-router-dom";
+import { KeyRound, ShieldCheck, ShieldOff } from "lucide-react";
+import NeuAuthLayout from "@/components/NeuAuthLayout";
+import NeuInput from "@/components/NeuInput";
+import PasswordInput from "@/components/PasswordInput";
+import NeuButton from "@/components/NeuButton";
+import { db } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 
-const PROVIDERS = [
-  { id: "google", flag: "enable_google_login", name: "Google" },
-  { id: "microsoft", flag: "enable_microsoft_login", name: "Microsoft" },
-  { id: "facebook", flag: "enable_facebook_login", name: "Facebook" },
-  { id: "apple", flag: "enable_apple_login", name: "Apple" },
-];
-
-// /mfa: finishes a Google, Microsoft, Facebook, Apple or SSO sign-in that needs a second step
-// (?mfa_code=…), and opened directly it is the two-factor authentication settings page.
+// Two-factor authentication settings: an authenticator app plus one-time recovery codes.
 export default function Mfa() {
-  const returnTo = safeReturnTo();
-  const [challenge, setChallenge] = useState(null);
-  const [managing, setManaging] = useState(null);
-  const [resuming, setResuming] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    resumeMfa()
-      .then((result) => {
-        // A remembered device signs in straight away; otherwise continue the second step here.
-        if (result?.access_token) return finishSignIn(result.access_token, returnTo);
-        if (result) setChallenge(result);
-        setResuming(false);
-      })
-      .catch((err) => { setError(err); setResuming(false); });
-  }, []);
-
-  if (resuming) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-  return (
-    <MfaScreen>
-      {managing ? <MfaManage session={managing} returnTo={returnTo} />
-        : challenge ? <MfaFlow challenge={challenge} returnTo={returnTo} onManage={setManaging} />
-        : <ConfirmIdentity returnTo={returnTo} onChallenge={setChallenge} initialError={error} />}
-    </MfaScreen>
-  );
-}
-
-// Changing two-factor settings starts with a fresh sign-in, then a code from an enrolled method.
-function ConfirmIdentity({ returnTo, onChallenge, initialError }) {
-  const info = useAppInfo();
-  const options = info ? info.auth_config || {} : null;
-  const [email, setEmail] = useState("");
+  const { user } = useAuth();
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [secret, setSecret] = useState("");
+  const [uri, setUri] = useState("");
+  const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(initialError);
+  const [recoveryCodes, setRecoveryCodes] = useState([]);
+  const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const submit = async (e) => {
-    e.preventDefault();
-    setError(null);
+  const loadStatus = async () => {
+    setLoading(true);
+    try {
+      const status = await db.auth.mfaStatus();
+      setEnabled(status.enabled);
+    } catch (e) {
+      setError(e.message || "Could not load your security settings");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadStatus(); }, []);
+
+  const startEnrol = async () => {
+    setError("");
     setBusy(true);
     try {
-      onChallenge(await signInToManageMfa(email, password));
-    } catch (err) {
-      setError(err);
+      const result = await db.auth.mfaEnroll();
+      setSecret(result.secret);
+      setUri(result.otpauth_url);
+    } catch (e) {
+      setError(e.message || "Could not start setup");
+    } finally {
       setBusy(false);
     }
   };
 
-  const withProvider = (provider) => signInWithProvider(provider, returnTo, { manage: true }).catch(setError);
-  const providers = options ? PROVIDERS.filter((provider) => options[provider.flag] ?? provider.id === "google") : [];
+  const activate = async (e) => {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    try {
+      const result = await db.auth.mfaActivate(code.trim());
+      setRecoveryCodes(result.recovery_codes || []);
+      setEnabled(true);
+      setSecret("");
+      setUri("");
+      setCode("");
+    } catch (err) {
+      setError(err.message || "That code is not valid");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const disable = async (e) => {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    try {
+      await db.auth.mfaDisable(password);
+      setEnabled(false);
+      setPassword("");
+      setRecoveryCodes([]);
+    } catch (err) {
+      setError(err.message || "Could not turn off two-factor authentication");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!user) {
+    return (
+      <NeuAuthLayout
+        title="Two-Factor Authentication"
+        subtitle="Sign in to manage your security settings"
+        footer={<Link to="/login" className="sdl-gradient-text font-semibold">Log in</Link>}
+      >
+        <p className="text-sm text-slate-500 text-center">You need to be signed in.</p>
+      </NeuAuthLayout>
+    );
+  }
 
   return (
-    <>
-      <MfaHeader title={info && `Welcome to ${info.name || "the app"}`} description="Sign in to continue" />
-      <MfaNotice error={error} />
-      {!options && !error && <Loader2 className="mx-auto w-6 h-6 animate-spin text-muted-foreground" />}
-      {options && (
-        <div className="space-y-4">
-          {providers.map((provider) => (
-            <Button key={provider.id} variant="outline" className="w-full h-12 text-sm font-medium" onClick={() => withProvider(provider.id)}>
-              {provider.id === "google" && <GoogleIcon className="w-5 h-5 mr-2" />}
-              Continue with {provider.name}
-            </Button>
-          ))}
-          {(options.enable_sso_login || options.use_workspace_sso) && (
-            <Button variant="outline" className="w-full h-12 text-sm font-medium" onClick={() => withProvider("sso")}>
-              Continue with SSO
-            </Button>
-          )}
-          {options.enable_username_password && (
-            <form onSubmit={submit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="mfa-email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                  <Input id="mfa-email" type="email" autoComplete="email" placeholder="you@example.com" value={email}
-                    onChange={(e) => setEmail(e.target.value)} className="pl-10 h-12" required />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mfa-password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                  <Input id="mfa-password" type="password" autoComplete="current-password" placeholder="••••••••" value={password}
-                    onChange={(e) => setPassword(e.target.value)} className="pl-10 h-12" required />
-                </div>
-              </div>
-              <Button type="submit" className="w-full h-12 font-medium" disabled={busy}>
-                {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Continue
-              </Button>
-            </form>
-          )}
+    <NeuAuthLayout
+      title="Two-Factor Authentication"
+      subtitle="Add an extra layer of protection when signing in"
+      footer={<Link to="/" className="sdl-gradient-text font-semibold">Back to app</Link>}
+    >
+      {error && (
+        <div className="mb-4 p-3 rounded-xl bg-red-50 text-sdl-red text-sm text-center neu-inset-sm">
+          {error}
         </div>
       )}
-    </>
+
+      {loading ? (
+        <p className="text-sm text-slate-400 text-center py-4">Loading...</p>
+      ) : enabled ? (
+        <div className="space-y-4">
+          <div className="neu-card-sm p-4 flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-green-600" />
+            <div>
+              <p className="text-sm font-semibold text-slate-700">Authenticator app is on</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">You'll be asked for a code each time you sign in.</p>
+            </div>
+          </div>
+          {recoveryCodes.length > 0 && (
+            <div className="neu-card-sm p-4">
+              <p className="text-xs font-semibold text-slate-600 mb-2">Save these recovery codes</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {recoveryCodes.map((value) => (
+                  <code key={value} className="text-xs text-slate-600 neu-inset-sm px-2 py-1 rounded-lg">{value}</code>
+                ))}
+              </div>
+            </div>
+          )}
+          <form onSubmit={disable} className="space-y-3">
+            <PasswordInput
+              icon={KeyRound}
+              autoComplete="current-password"
+              placeholder="Confirm your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <NeuButton type="submit" loading={busy} className="w-full h-12 rounded-2xl text-sdl-red">
+              {!busy && <ShieldOff className="w-4 h-4" />}
+              Turn off
+            </NeuButton>
+          </form>
+        </div>
+      ) : secret ? (
+        <form onSubmit={activate} className="space-y-4">
+          <div className="neu-card-sm p-4">
+            <p className="text-xs font-semibold text-slate-600 mb-2">Add this key to your authenticator app</p>
+            <code className="block text-xs text-slate-600 neu-inset-sm px-3 py-2 rounded-lg break-all">{secret}</code>
+            <p className="text-[11px] text-slate-400 mt-2 break-all">{uri}</p>
+          </div>
+          <NeuInput
+            icon={ShieldCheck}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="Enter the 6-digit code"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            required
+          />
+          <NeuButton type="submit" variant="gradient" loading={busy} className="w-full h-12 rounded-2xl">
+            {!busy && <ShieldCheck className="w-4 h-4" />}
+            Turn on
+          </NeuButton>
+        </form>
+      ) : (
+        <div className="space-y-4">
+          <div className="neu-card-sm p-4 flex items-center gap-3">
+            <ShieldOff className="w-5 h-5 text-slate-400" />
+            <div>
+              <p className="text-sm font-semibold text-slate-700">Authenticator app is off</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Protect your account with a 6-digit code.</p>
+            </div>
+          </div>
+          <NeuButton onClick={startEnrol} variant="gradient" loading={busy} className="w-full h-12 rounded-2xl">
+            {!busy && <ShieldCheck className="w-4 h-4" />}
+            Set up authenticator
+          </NeuButton>
+        </div>
+      )}
+    </NeuAuthLayout>
   );
 }
