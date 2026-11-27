@@ -29,6 +29,9 @@ npx skills add base44/skills
 
 - The backend runs on Cloudflare Workers. Local development is `npm run dev:api` (Worker on :8787, local D1) plus `npm run dev` (Vite on :3000, proxies `/api`).
 - Apply schema changes with `npm run db:migrate:local`; regenerate the schema from `base44/entities/` with `npm run entities:generate`.
+- The Worker also applies `worker/migrations` by itself the first time it hits a database without
+  tables (`worker/src/schema-bootstrap.js`, SQL files imported as text via the `rules` entry in
+  `worker/wrangler.jsonc`), so a fresh local D1 or a new deployment never shows "no tables yet".
 - `AUTH_SECRET` must be supplied to the Worker for sessions to work (`--var AUTH_SECRET:...` or `worker/.dev.vars`).
 - Reuse the existing API client in `src/api/base44Client.js` before adding new API paths.
 - Accounts exported from the old Base44 app are loaded with `node worker/scripts/import-legacy-users.mjs <users.csv> [--remote]`. They carry no password (Base44 never exported them), so each user sets one from **Forgot password?**; without `RESEND_API_KEY` the Worker only logs the reset link.

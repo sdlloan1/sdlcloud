@@ -3,6 +3,7 @@
 import { EntityStore, entityDef } from "./store.js";
 import { createDbClient } from "./db-client.js";
 import { createDatabase } from "./database.js";
+import { ensureSchema } from "./schema-bootstrap.js";
 import { getFile, putFile, storageConfigured } from "./storage.js";
 import {
   clearedCookie,
@@ -67,6 +68,7 @@ export default {
     let connection;
     try {
       connection = createDatabase(env);
+      await ensureSchema(env);
       return await handleApi(request, { ...env, DB: connection.db }, url);
     } catch (error) {
       const status = error.status || 500;
@@ -90,6 +92,7 @@ export default {
     const user = { id: "scheduler", role: "admin" };
     const connection = createDatabase(env);
     const scoped = { ...env, DB: connection.db };
+    await ensureSchema(env);
     const db = createDbClient(scoped, { user, serviceRole: true });
     const request = new Request("https://internal/functions/sendRepaymentReminders", { method: "POST", body: "{}" });
     try {
