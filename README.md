@@ -77,6 +77,34 @@ npm run lint
 Without `RESEND_API_KEY` the Worker logs outgoing mail instead of sending it, so the app stays
 usable while email is not configured.
 
+### Deploy from a phone (no computer)
+
+Everything below happens in a mobile browser (Cloudflare dashboard + github.com) — no terminal.
+
+1. **Create the database and file bucket.** Dashboard → *Storage & Databases* → *D1 SQL database* →
+   **Create**, name it `sdl`, then copy the **Database ID** from the database page. Then
+   *R2 Object Storage* → **Create bucket** → `sdl-files` (R2 asks to enable billing once; the free
+   tier is enough. Without it uploads return 503, the rest of the app works).
+2. **Connect the repo to Workers Builds.** Workers & Pages → **Create** → **Import a repository** →
+   this repo, branch `main`. Build command `npm ci && npm run build`, deploy command
+   `npx wrangler deploy --config worker/wrangler.jsonc`. The `--config` flag matters: without it
+   Wrangler finds no root config and deploys the SPA only, with no `/api`.
+3. **Point the config at your resources.** On github.com edit `worker/wrangler.jsonc`: replace the
+   placeholder `database_id` with the ID from step 1 and set `APP_BASE_URL` to your public URL
+   (`https://<worker-name>.<subdomain>.workers.dev`, or a custom domain). Commit to `main` — that
+   push builds and deploys.
+4. **Load the schema once.** D1 → `sdl` → *Console*. Paste the **contents** of
+   `worker/migrations/0001_init.sql` (open the file on GitHub → **Raw** → select all → copy; the
+   file path itself is not SQL and fails with a syntax error) and run it — it executes 66
+   statements. Then paste the contents of `0002_app_settings_seed.sql` the same way.
+5. **Add the login secret.** Worker → Settings → *Variables and Secrets* → **Add** → Secret
+   `AUTH_SECRET`, value = a long random string from any password generator (keep it stable, changing
+   it signs everyone out). Optional: `RESEND_API_KEY`, `GMAIL_*`, `GOOGLE_*`.
+6. **Check it.** `https://<your-url>/api/health` must return `{"ok":true,...}`. The app's HTML there
+   means the deploy command from step 2 is not in place.
+7. **Custom domain (optional).** Worker → Settings → *Domains & Routes* → **Add custom domain**,
+   then set `APP_BASE_URL` to it.
+
 ## Data cutover from Base44
 
 The Worker no longer talks to the Base44 backend. To move production data:
