@@ -32,6 +32,9 @@ npx skills add base44/skills
 - The Worker also applies `worker/migrations` by itself the first time it hits a database without
   tables (`worker/src/schema-bootstrap.js`, SQL files imported as text via the `rules` entry in
   `worker/wrangler.jsonc`), so a fresh local D1 or a new deployment never shows "no tables yet".
+  It caches a boolean, never a promise: the `handle_cross_request_promise_resolution` flag (default
+  since compatibility date 2024-10-14) makes a promise that outlives its request unusable, and
+  awaiting it in a later request throws "This promise was created by a request that has since ended".
 - `AUTH_SECRET` must be supplied to the Worker for sessions to work (`--var AUTH_SECRET:...` or `worker/.dev.vars`).
 - Reuse the existing API client in `src/api/base44Client.js` before adding new API paths.
 - Accounts exported from the old Base44 app are loaded with `node worker/scripts/import-legacy-users.mjs <users.csv> [--remote]`. They carry no password (Base44 never exported them), so each user sets one from **Forgot password?**; without `RESEND_API_KEY` the Worker only logs the reset link.
