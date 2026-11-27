@@ -2,6 +2,7 @@ import { db } from "@/api/base44Client";
 import React, { useState, useEffect } from "react";
 
 import NeuButton from "@/components/NeuButton";
+import { DEFAULT_TERMS } from "@/lib/defaultTerms";
 import { ScrollText, Check } from "lucide-react";
 
 const SDL_LOGO = "https://media.base44.com/images/public/user_6a65c0f6c3896fd41e9f3a73/59861e857_SDLlogo.png";
@@ -12,8 +13,14 @@ export default function TermsModal({ user, onAccept }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    db.entities.AppSettings.list().then((s) => setSettings(s[0]));
+    db.entities.AppSettings.list()
+      .then((s) => setSettings(s[0]))
+      .catch(() => {});
   }, []);
+
+  // Admins can replace this copy in Admin → Settings → Content; until they do,
+  // show the platform's standard terms instead of an endless "Loading terms...".
+  const termsText = settings?.terms_conditions?.trim() || DEFAULT_TERMS;
 
   const handleAccept = async () => {
     if (!accepted) return;
@@ -46,7 +53,7 @@ export default function TermsModal({ user, onAccept }) {
           </div>
           <div className="neu-inset p-4 rounded-2xl max-h-72 overflow-y-auto mb-4">
             <p className="text-sm text-slate-600 whitespace-pre-line leading-relaxed">
-              {settings?.terms_conditions || "Loading terms..."}
+              {termsText}
             </p>
           </div>
           <label className="flex items-center gap-3 cursor-pointer mb-4">

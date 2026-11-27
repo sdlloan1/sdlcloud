@@ -89,7 +89,7 @@ export function createDbClient(env, { user = null, serviceRole = false } = {}) {
           if (!file || !storageConfigured(env)) throw httpError(503, "File storage is not configured");
           const key = `${crypto.randomUUID()}-${String(file.name || "upload").replace(/[^\w.-]+/g, "_")}`;
           await putFile(env, key, file);
-          return { file_url: `${env.APP_BASE_URL}/api/files/${key}`, file_name: file.name };
+          return { file_url: `${env.REQUEST_ORIGIN || env.APP_BASE_URL || ""}/api/files/${key}`, file_name: file.name };
         },
       },
     },
