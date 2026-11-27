@@ -10,11 +10,25 @@ export function storageConfigured(env) {
 
 const supabaseConfigured = (env) => Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
 
+// A Worker whose SUPABASE_URL is a file path or a bare host makes every storage
+// call throw "Invalid URL" and the upload screen only shows that raw text. Fail
+// with the actual problem instead, and tolerate a trailing slash.
+const supabaseBaseUrl = (env) => {
+  const base = String(env.SUPABASE_URL || "").trim().replace(/\/+$/, "");
+  if (!/^https?:\/\/[^/\s]+/i.test(base)) {
+    throw httpError(
+      503,
+      "File storage is misconfigured: SUPABASE_URL must be the Supabase project URL (https://<project>.supabase.co).",
+    );
+  }
+  return base;
+};
+
 export async function putFile(env, key, file) {
   const contentType = file.type || "application/octet-stream";
   if (supabaseConfigured(env)) {
     const response = await fetch(
-      `${env.SUPABASE_URL}/storage/v1/object/${bucket(env)}/${encodeURIComponent(key)}`,
+      `${supabaseBaseUrl(env)}/storage/v1/object/${bucket(env)}/${encodeURIComponent(key)}`,
       {
         method: "POST",
         headers: {
@@ -43,7 +57,7 @@ export async function putFile(env, key, file) {
 export async function getFile(env, key) {
   if (supabaseConfigured(env)) {
     const response = await fetch(
-      `${env.SUPABASE_URL}/storage/v1/object/${bucket(env)}/${encodeURIComponent(key)}`,
+      `${supabaseBaseUrl(env)}/storage/v1/object/${bucket(env)}/${encodeURIComponent(key)}`,
       { headers: { Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` } },
     );
     if (response.status === 404) return null;
