@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node worker/scripts/dev.mjs",
     "dev:api": "wrangler dev --config worker/wrangler.jsonc --port 8787",
     "build": "vite build",
     "deploy": "vite build && wrangler deploy --config worker/wrangler.jsonc",

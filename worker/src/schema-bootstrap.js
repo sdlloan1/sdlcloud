@@ -8,6 +8,7 @@
 import initSql from "../migrations/0001_init.sql";
 import seedSql from "../migrations/0002_app_settings_seed.sql";
 import emailOtpSql from "../migrations/0003_email_otp.sql";
+import legacyUsersSql from "../migrations/0004_legacy_users.sql";
 
 // D1 runs one statement per prepare(), so the migration files are split here.
 function statements(sql) {
@@ -20,7 +21,7 @@ function statements(sql) {
     .filter(Boolean);
 }
 
-const MIGRATIONS = [...statements(initSql), ...statements(seedSql), ...statements(emailOtpSql)];
+const MIGRATIONS = [...statements(initSql), ...statements(seedSql), ...statements(emailOtpSql), ...statements(legacyUsersSql)];
 
 // A flag, not a cached promise: with the handle_cross_request_promise_resolution
 // compatibility flag (default since 2024-10-14) a promise that outlives its
