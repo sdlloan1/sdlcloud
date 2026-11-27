@@ -358,9 +358,13 @@ export class EntityStore {
 
     const bucket = dateBucket?.field && def.fields[dateBucket.field] ? dateBucket.field : "created_date";
     const unit = dateBucket?.unit === "week" ? "week" : "month";
-    const bucketSql = unit === "week"
-      ? `date(${q(bucket)}, '-' || ((strftime('%w', ${q(bucket)}) + 6) % 7) || ' days')`
-      : `date(${q(bucket)}, 'start of month')`;
+    // Postgres (Supabase) and SQLite (D1) bucket dates differently.
+    const postgres = this.db.dialect === "postgres";
+    const bucketSql = postgres
+      ? `to_char(date_trunc('${unit}', ${q(bucket)}::timestamptz), 'YYYY-MM-DD')`
+      : unit === "week"
+        ? `date(${q(bucket)}, '-' || ((strftime('%w', ${q(bucket)}) + 6) % 7) || ' days')`
+        : `date(${q(bucket)}, 'start of month')`;
 
     const groups = (Array.isArray(groupBy) ? groupBy : groupBy ? [groupBy] : []).filter((field) => def.fields[field] || field === "created_date");
     const sums = (Array.isArray(sum) ? sum : sum ? [sum] : []).filter((field) => def.fields[field]);

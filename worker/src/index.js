@@ -2,6 +2,8 @@
 // and its built SPA assets, served from one origin.
 import { EntityStore, entityDef } from "./store.js";
 import { createDbClient } from "./db-client.js";
+import { createDatabase } from "./database.js";
+import { getFile, putFile, storageConfigured } from "./storage.js";
 import {
   clearedCookie,
   createSession,
@@ -56,28 +58,37 @@ const json = (body, status = 200, headers = {}) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...headers } });
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (!url.pathname.startsWith("/api/")) {
+      if (env.ASSETS) return env.ASSETS.fetch(request);
+      return json({ error: "Not found" }, 404);
+    }
+    let connection;
     try {
-      if (!url.pathname.startsWith("/api/")) {
-        if (env.ASSETS) return env.ASSETS.fetch(request);
-        return json({ error: "Not found" }, 404);
-      }
-      return await handleApi(request, env, url);
+      connection = createDatabase(env);
+      return await handleApi(request, { ...env, DB: connection.db }, url);
     } catch (error) {
       const status = error.status || 500;
       if (status >= 500) console.error(error);
       return json({ error: error.message || "Server error" }, status);
+    } finally {
+      if (connection) ctx.waitUntil(connection.close());
     }
   },
 
   // Nightly reminder run (see "triggers" in wrangler.jsonc).
   async scheduled(_event, env, ctx) {
     const user = { id: "scheduler", role: "admin" };
-    const db = createDbClient(env, { user, serviceRole: true });
+    const connection = createDatabase(env);
+    const scoped = { ...env, DB: connection.db };
+    const db = createDbClient(scoped, { user, serviceRole: true });
     const request = new Request("https://internal/functions/sendRepaymentReminders", { method: "POST", body: "{}" });
-    await sendRepaymentReminders.default(request, { db, env, user });
-    ctx.waitUntil(Promise.resolve());
+    try {
+      await sendRepaymentReminders.default(request, { db, env: scoped, user });
+    } finally {
+      ctx.waitUntil(connection.close());
+    }
   },
 };
 
@@ -237,7 +248,7 @@ async function handleAuth(request, env, parts) {
 }
 
 async function handleFiles(request, env, parts) {
-  if (!env.FILES) throw httpError(503, "File storage is not configured");
+  if (!storageConfigured(env)) throw httpError(503, "File storage is not configured");
 
   if (request.method === "POST" && !parts[0]) {
     await requireUser(env, request);
@@ -245,16 +256,16 @@ async function handleFiles(request, env, parts) {
     const file = form.get("file");
     if (!file || typeof file === "string") throw httpError(400, "Attach a file");
     const key = `${crypto.randomUUID()}-${String(file.name || "upload").replace(/[^\w.-]+/g, "_")}`;
-    await env.FILES.put(key, file.stream(), { httpMetadata: { contentType: file.type || "application/octet-stream" } });
+    await putFile(env, key, file);
     return json({ file_url: `${env.APP_BASE_URL}/api/files/${key}`, file_name: file.name });
   }
 
   if (request.method === "GET" && parts[0]) {
-    const object = await env.FILES.get(decodeURIComponent(parts.join("/")));
-    if (!object) throw httpError(404, "File not found");
-    return new Response(object.body, {
+    const stored = await getFile(env, decodeURIComponent(parts.join("/")));
+    if (!stored) throw httpError(404, "File not found");
+    return new Response(stored.body, {
       headers: {
-        "Content-Type": object.httpMetadata?.contentType || "application/octet-stream",
+        "Content-Type": stored.contentType,
         "Cache-Control": "public, max-age=31536000, immutable",
       },
     });
