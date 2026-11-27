@@ -64,6 +64,10 @@ npx skills add base44/skills
 
 ## Deployment Notes
 
+- Cloudflare secrets are per Worker. `AUTH_SECRET` set in the Base44 sandbox or a local `.dev.vars`
+  does not reach the deployed Worker; set it on the Worker itself (`npm run secret:auth`, or
+  dashboard → Variables and Secrets). `/api/health` reports `auth_secret` so a missing key shows up
+  without attempting a login.
 - Deploy with `npx wrangler deploy --config worker/wrangler.jsonc` (or `npm run deploy`). Without
   `--config` Wrangler finds no root config and deploys the SPA only, so `/api/health` returns the
   app's HTML instead of JSON.
