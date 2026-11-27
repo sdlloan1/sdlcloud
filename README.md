@@ -119,4 +119,4 @@ The Worker no longer talks to the Base44 backend. To move production data:
 ## Legacy Base44 workflow
 
 The Base44 CLI (`base44 dev`, publishing through the dashboard) belongs to the previous hosting
-setup and is not used by this Worker-based app.
+setup and is not used by this Worker-based app. 
