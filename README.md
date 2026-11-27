@@ -51,33 +51,36 @@ npx wrangler dev --config worker/wrangler.jsonc --port 3000
 npm run lint
 ```
 
-## Supabase (database and file storage)
+## Database (D1) and file storage (Supabase)
 
-Data lives in Supabase Postgres and uploads live in Supabase Storage. The Worker uses the
-service role key, so neither key is ever sent to the browser.
+Data lives in Cloudflare D1, bound as `DB` in `worker/wrangler.jsonc`. Uploads live in Supabase
+Storage, reached over HTTPS with the service role key, so no key ever reaches the browser.
+
+Supabase Postgres cannot be used from the Worker: Supabase's database endpoints present a
+self-signed certificate, and Workers verify every certificate they connect to, so the handshake
+fails with `TLS handshake failed: invalid peer certificate: UnknownIssuer`. Cloudflare Hyperdrive
+does not help either — its default `require` mode also validates against public roots. D1 is the
+database for production and for local development.
+
+### Storage setup (once)
 
 1. Create a project at supabase.com and wait for provisioning to finish.
-2. **Schema.** Supabase → **SQL Editor** → paste the whole of `supabase/schema.sql` → **Run**.
-   Then paste `supabase/seed.sql` → **Run** (default settings row). Both files are generated from
-   the entity definitions by `npm run entities:generate`.
-3. **Storage.** **Storage** → **New bucket** → name it `sdl-files` → keep it **private**.
-4. **Secrets.** Worker → Settings → Variables and Secrets (or `npx wrangler secret put`):
-   - `SUPABASE_DB_URL` — Project Settings → Database → Connection string → **Connection pooling**
-     (port 6543). This is the Postgres connection the Worker opens.
+2. **Storage** → **New bucket** → name it `sdl-files` → keep it **private**.
+3. **Secrets.** Worker → Settings → Variables and Secrets (or `npx wrangler secret put`):
    - `SUPABASE_URL` — Project Settings → API → Project URL.
    - `SUPABASE_SERVICE_ROLE_KEY` — Project Settings → API → `service_role` key. Server-side only.
-   - `AUTH_SECRET` — any long random string, kept stable (changing it signs everyone out).
 
    Optional: `SUPABASE_STORAGE_BUCKET` when the bucket is not named `sdl-files`.
 
-Without `SUPABASE_DB_URL` the Worker falls back to the D1 binding, which is only used for local
-development.
+`supabase/schema.sql` and `supabase/seed.sql` are still generated from the entity definitions, but
+only apply to a host that trusts Supabase's certificate. The Worker does not read them.
 
 ## Deploy to Cloudflare
 
 1. `npx wrangler login`
-2. Complete the Supabase section above (schema, bucket and the three `SUPABASE_*` secrets).
-3. Add the secrets the Worker reads:
+2. Apply the migrations to the remote D1 database: `npm run db:migrate`.
+3. Complete the storage setup above (the `sdl-files` bucket and the two storage secrets).
+4. Add the secrets the Worker reads:
    ```bash
    npx wrangler secret put AUTH_SECRET --config worker/wrangler.jsonc
    npx wrangler secret put RESEND_API_KEY --config worker/wrangler.jsonc      # transactional email
@@ -89,8 +92,8 @@ development.
    npx wrangler secret put GOOGLE_SHEETS_REFRESH_TOKEN --config worker/wrangler.jsonc
    ```
    `APP_BASE_URL` and `MAIL_FROM` are plain variables in `worker/wrangler.jsonc`.
-4. Deploy the Worker together with the built assets: `npm run deploy`
-5. Attach the domain under Workers → `sdlcloud` → Custom domains.
+5. Deploy the Worker together with the built assets: `npm run deploy`
+6. Attach the domain under Workers → `sdlcloud` → Custom domains.
 
 Without `RESEND_API_KEY` the Worker logs outgoing mail instead of sending it, so the app stays
 usable while email is not configured.
@@ -99,22 +102,24 @@ usable while email is not configured.
 
 Everything below happens in a mobile browser (Cloudflare dashboard + github.com) — no terminal.
 
-1. **Create the Supabase project.** supabase.com → **New project**. Then **SQL Editor** → paste the
-   whole of `supabase/schema.sql` (GitHub → **Raw** → select all → copy) → **Run**, then the same
-   with `supabase/seed.sql`. In **Storage** → **New bucket** → `sdl-files`, keep it private.
-2. **Connect the repo to Workers Builds.** Workers & Pages → **Create** → **Import a repository** →
+1. **Apply the database schema.** Cloudflare dashboard → **Workers & Pages** → **D1** → the `sdl`
+   database → **Console**. Paste the whole of `worker/migrations/0001_init.sql` (GitHub → **Raw** →
+   select all → copy) → **Execute**, then the same with `0002_app_settings_seed.sql`. Both files are
+   safe to run twice.
+2. **Create the file bucket.** supabase.com → **Storage** → **New bucket** → `sdl-files`, keep it
+   private.
+3. **Connect the repo to Workers Builds.** Workers & Pages → **Create** → **Import a repository** →
    this repo, branch `main`. Build command `npm ci && npm run build`, deploy command
    `npx wrangler deploy --config worker/wrangler.jsonc`. The `--config` flag matters: without it
-   Wrangler finds no root config and deploys the SPA only, with no `/api`.
-3. **Add the Supabase keys.** Worker → Settings → *Variables and Secrets* → **Add** → Secret, three
-   times: `SUPABASE_DB_URL` (Project Settings → Database → Connection string → **Connection
-   pooling**, port 6543), `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (Project Settings → API).
-4. **Add the login secret.** Worker → Settings → *Variables and Secrets* → **Add** → Secret
+   Wrangler finds no root config and deploys the SPA only, so `/api/health` returns the app's HTML.
+4. **Add the storage keys.** Worker → Settings → *Variables and Secrets* → **Add** → Secret:
+   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API).
+5. **Add the login secret.** Worker → Settings → *Variables and Secrets* → **Add** → Secret
    `AUTH_SECRET`, value = a long random string from any password generator (keep it stable, changing
    it signs everyone out). Optional: `RESEND_API_KEY`, `GMAIL_*`, `GOOGLE_*`.
-5. **Check it.** `https://<your-url>/api/health` must return `{"ok":true,...}`. The app's HTML there
-   means the deploy command from step 2 is not in place.
-6. **Custom domain (optional).** Worker → Settings → *Domains & Routes* → **Add custom domain**,
+6. **Check it.** `https://<your-url>/api/health` must return `{"ok":true,...}`. The app's HTML there
+   means the deploy command from step 3 is not in place.
+7. **Custom domain (optional).** Worker → Settings → *Domains & Routes* → **Add custom domain**,
    then set `APP_BASE_URL` to it.
 
 ## Data cutover from Base44
