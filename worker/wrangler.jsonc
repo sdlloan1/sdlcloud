@@ -21,7 +21,7 @@
   ],
   "vars": {
     "APP_BASE_URL": "https://sdlcloud.sdlloan1.workers.dev",
-    "MAIL_FROM": "SDL <no-reply@shubhdhanlakshmi.com>"
+    "MAIL_FROM": "SDL <onboarding@resend.dev>"
   },
   "triggers": {
     "crons": ["30 2 * * *"]

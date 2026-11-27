@@ -4,7 +4,7 @@
 // message to the Worker log so local development works without a provider.
 import { buildRawMessage } from "./shared/emailTemplate.js";
 
-const DEFAULT_FROM = "SDL <no-reply@shubhdhanlakshmi.com>";
+const DEFAULT_FROM = "SDL <onboarding@resend.dev>";
 const GMAIL_SENDER = "shubhdhanlakshmifund@gmail.com";
 
 const fromAddress = (env) => env.MAIL_FROM || DEFAULT_FROM;

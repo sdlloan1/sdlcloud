@@ -48,6 +48,9 @@ npx skills add base44/skills
   `GMAIL_CLIENT_SECRET` and `GMAIL_REFRESH_TOKEN` are set. With no provider the message (including
   the code or reset link) is written to the Worker log as `[mail:skipped] …` and the call throws, so
   admin emails report the failure instead of a false success. `MAIL_FROM` overrides the sender.
+- The sender is `SDL <onboarding@resend.dev>` until `shubhdhanlakshmi.com` is verified at
+  resend.com/domains. Resend's onboarding sender only delivers to the Resend account owner's own
+  inbox, so real users get no mail until the domain (DKIM/SPF) is verified.
 - Emailed one-time codes live in the `email_otps` table (`worker/migrations/0003_email_otp.sql`).
   `POST /api/auth/otp/request` and `POST /api/auth/otp/verify` take `{ email, code, purpose }` with
   purpose `login` or `reset`. Codes are six digits, expire in 10 minutes, allow 5 attempts, are
