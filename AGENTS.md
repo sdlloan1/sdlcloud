@@ -31,6 +31,7 @@ npx skills add base44/skills
 - Apply schema changes with `npm run db:migrate:local`; regenerate the schema from `base44/entities/` with `npm run entities:generate`.
 - `AUTH_SECRET` must be supplied to the Worker for sessions to work (`--var AUTH_SECRET:...` or `worker/.dev.vars`).
 - Reuse the existing API client in `src/api/base44Client.js` before adding new API paths.
+- Accounts exported from the old Base44 app are loaded with `node worker/scripts/import-legacy-users.mjs <users.csv> [--remote]`. They carry no password (Base44 never exported them), so each user sets one from **Forgot password?**; without `RESEND_API_KEY` the Worker only logs the reset link.
 - Run the relevant checks from `package.json` before finishing code changes.
 
 ## Deployment Notes

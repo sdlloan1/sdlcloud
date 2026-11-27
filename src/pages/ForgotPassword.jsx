@@ -1,6 +1,6 @@
 import { db } from "@/api/base44Client";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import NeuAuthLayout from "@/components/NeuAuthLayout";
 import NeuInput from "@/components/NeuInput";
@@ -8,7 +8,8 @@ import NeuButton from "@/components/NeuButton";
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
+  const [params] = useSearchParams();
+  const [email, setEmail] = useState(params.get("email") || "");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 

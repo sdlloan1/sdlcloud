@@ -71,7 +71,15 @@ export default {
     } catch (error) {
       const status = error.status || 500;
       if (status >= 500) console.error(error);
-      return json({ error: error.message || "Server error" }, status);
+      // A fresh D1 database has no tables until the migrations run; say so instead
+      // of leaking the raw SQLite error to the login screen.
+      if (/no such table/i.test(String(error.message || ""))) {
+        return json({
+          error: "The database has no tables yet. Apply the migrations: npm run db:migrate (deployed) or npm run db:migrate:local (local).",
+          code: "database_not_initialised",
+        }, 503);
+      }
+      return json({ error: error.message || "Server error", ...(error.code ? { code: error.code } : {}) }, status);
     } finally {
       if (connection) ctx.waitUntil(connection.close());
     }
@@ -136,7 +144,7 @@ async function handleAuth(request, env, parts) {
     const row = await findUserByEmail(env, body.email);
     if (!row) throw httpError(401, "Invalid email or password");
     if (!row.password_hash) {
-      throw httpError(403, "This account has no password yet. Use the password reset link to set one.");
+      throw httpError(403, "This account has no password yet. Use the password reset link to set one.", "password_not_set");
     }
     if (!(await verifyPassword(body.password, row.password_hash))) {
       throw httpError(401, "Invalid email or password");
