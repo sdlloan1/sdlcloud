@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, LogIn, ShieldCheck } from "lucide-react";
+import { Mail, Lock, LogIn, ShieldCheck, KeyRound } from "lucide-react";
 import NeuAuthLayout from "@/components/NeuAuthLayout";
 import NeuInput from "@/components/NeuInput";
 import PasswordInput from "@/components/PasswordInput";
@@ -18,6 +18,30 @@ export default function Login() {
   const [needsPassword, setNeedsPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // Passwordless sign-in: a six-digit code emailed to the account.
+  const [useCode, setUseCode] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  const [loginCode, setLoginCode] = useState("");
+  const [sendingCode, setSendingCode] = useState(false);
+
+  const validEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
+
+  const handleSendCode = async () => {
+    setError("");
+    if (!validEmail) {
+      setError("Enter a valid email address");
+      return;
+    }
+    setSendingCode(true);
+    try {
+      await db.auth.requestLoginCode(email.trim());
+      setCodeSent(true);
+    } catch (err) {
+      setError(err.message || "Could not send the code. Try again.");
+    } finally {
+      setSendingCode(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +49,11 @@ export default function Login() {
     setNeedsPassword(false);
     setLoading(true);
     try {
-      await db.auth.loginViaEmailPassword(email, password, code || undefined);
+      if (useCode) {
+        await db.auth.loginWithCode(email.trim(), loginCode.trim());
+      } else {
+        await db.auth.loginViaEmailPassword(email, password, code || undefined);
+      }
       await checkUserAuth();
       navigate("/", { replace: true });
     } catch (err) {
@@ -46,7 +74,7 @@ export default function Login() {
   return (
     <NeuAuthLayout
       title="Welcome Back"
-      subtitle="Log in to your SDL account"
+      subtitle={useCode ? "We'll email you a one-time login code" : "Log in to your SDL account"}
       footer={
         <>
           Don't have an account?{" "}
@@ -84,20 +112,49 @@ export default function Login() {
             required
           />
         </div>
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-xs font-medium text-slate-500 ml-1">Password</label>
-            <Link to="/forgot-password" className="text-xs sdl-gradient-text font-medium">Forgot password?</Link>
+        {!useCode && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-medium text-slate-500 ml-1">Password</label>
+              <Link to="/forgot-password" className="text-xs sdl-gradient-text font-medium">Forgot password?</Link>
+            </div>
+            <PasswordInput
+              icon={Lock}
+              autoComplete="current-password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
-          <PasswordInput
-            icon={Lock}
-            autoComplete="current-password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+        )}
+        {useCode && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-medium text-slate-500 ml-1">Login code</label>
+              <button
+                type="button"
+                onClick={handleSendCode}
+                disabled={sendingCode}
+                className="text-xs sdl-gradient-text font-medium"
+              >
+                {sendingCode ? "Sending..." : codeSent ? "Resend code" : "Email me a code"}
+              </button>
+            </div>
+            <NeuInput
+              icon={KeyRound}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="123456"
+              value={loginCode}
+              onChange={(e) => setLoginCode(e.target.value)}
+              required
+            />
+            <p className="text-xs text-slate-500 mt-2 ml-1">
+              {codeSent ? `Code sent to ${email}.` : "Enter the 6-digit code from your email."}
+            </p>
+          </div>
+        )}
         {needsCode && (
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-2 ml-1">Two-factor code</label>
@@ -114,8 +171,20 @@ export default function Login() {
         )}
         <NeuButton type="submit" variant="gradient" loading={loading} className="w-full h-12 rounded-2xl mt-2">
           {!loading && <LogIn className="w-4 h-4" />}
-          {loading ? "Logging in..." : "Log In"}
+          {loading ? "Logging in..." : useCode ? "Log In with Code" : "Log In"}
         </NeuButton>
+        <button
+          type="button"
+          onClick={() => {
+            setUseCode(!useCode);
+            setCodeSent(false);
+            setLoginCode("");
+            setError("");
+          }}
+          className="w-full text-xs text-slate-500 hover:text-slate-700 text-center"
+        >
+          {useCode ? "Use my password instead" : "Sign in with an emailed code instead"}
+        </button>
       </form>
     </NeuAuthLayout>
   );

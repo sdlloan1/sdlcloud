@@ -7,6 +7,7 @@
 // time it sees an empty database.
 import initSql from "../migrations/0001_init.sql";
 import seedSql from "../migrations/0002_app_settings_seed.sql";
+import emailOtpSql from "../migrations/0003_email_otp.sql";
 
 // D1 runs one statement per prepare(), so the migration files are split here.
 function statements(sql) {
@@ -19,10 +20,15 @@ function statements(sql) {
     .filter(Boolean);
 }
 
-const MIGRATIONS = [...statements(initSql), ...statements(seedSql)];
+const MIGRATIONS = [...statements(initSql), ...statements(seedSql), ...statements(emailOtpSql)];
 
-// Checked once per isolate; reset on failure so a later request can retry.
-let ready;
+// A flag, not a cached promise: with the handle_cross_request_promise_resolution
+// compatibility flag (default since 2024-10-14) a promise that outlives its
+// request can never settle, so awaiting it from a later request fails with
+// "This promise was created by a request that has since ended". An interrupted
+// run therefore leaves the flag false and the next request retries; the
+// migrations are idempotent, so concurrent runs are harmless.
+let schemaReady = false;
 
 async function hasSchema(db) {
   try {
@@ -41,14 +47,9 @@ async function migrate(db) {
   }
 }
 
-export function ensureSchema(env) {
+export async function ensureSchema(env) {
   // The Postgres path (SUPABASE_DB_URL) is set up from supabase/schema.sql.
-  if (!env?.DB) return Promise.resolve();
-  if (!ready) {
-    ready = migrate(env.DB).catch((error) => {
-      ready = undefined;
-      throw error;
-    });
-  }
-  return ready;
+  if (!env?.DB || schemaReady) return;
+  await migrate(env.DB);
+  schemaReady = true;
 }

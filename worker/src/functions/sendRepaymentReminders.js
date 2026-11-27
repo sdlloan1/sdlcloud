@@ -1,4 +1,4 @@
-import { buildRawMessage } from "../shared/emailTemplate.js";
+import { sendMail } from "../mailer.js";
 import {
   stageForOffset,
   stageLabel,
@@ -173,14 +173,6 @@ export default async function (req, ctx) {
       return Response.json({ generated: records.length, sent: 0, failed: 0, message: "Nothing pending to email" });
     }
 
-    let accessToken = null;
-    try {
-      const connection = await db.asServiceRole.connectors.getConnection("gmail");
-      accessToken = connection.accessToken;
-    } catch (e) {
-      accessToken = null;
-    }
-
     let sent = 0;
     const failedUpdates = [];
     const sentUpdates = [];
@@ -188,7 +180,7 @@ export default async function (req, ctx) {
     for (const batch of chunk(pending, 6)) {
       const results = await Promise.allSettled(
         batch.map(async (record) => {
-          if (!record.user_email || !accessToken) throw new Error("No recipient email or Gmail connection");
+          if (!record.user_email) throw new Error("No recipient email");
           const base = {
             stage: record.stage,
             userName: record.user_name,
@@ -202,25 +194,11 @@ export default async function (req, ctx) {
             totalPayable: record.total_payable,
             websiteUrl,
           };
-          const raw = buildRawMessage(
-            record.user_email,
-            "shubhdhanlakshmifund@gmail.com",
-            reminderSubject(record.stage, record.total_payable || record.repayment_amount, record.overdue_days || 0),
-            buildReminderEmailHtml(base)
-          );
-          const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ raw }),
-            signal: AbortSignal.timeout(15000),
+          await sendMail(ctx.env, {
+            to: record.user_email,
+            subject: reminderSubject(record.stage, record.total_payable || record.repayment_amount, record.overdue_days || 0),
+            html: buildReminderEmailHtml(base),
           });
-          if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText.slice(0, 300));
-          }
           return record.id;
         })
       );

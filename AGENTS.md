@@ -32,10 +32,35 @@ npx skills add base44/skills
 - The Worker also applies `worker/migrations` by itself the first time it hits a database without
   tables (`worker/src/schema-bootstrap.js`, SQL files imported as text via the `rules` entry in
   `worker/wrangler.jsonc`), so a fresh local D1 or a new deployment never shows "no tables yet".
+  It caches a boolean, never a promise: the `handle_cross_request_promise_resolution` flag (default
+  since compatibility date 2024-10-14) makes a promise that outlives its request unusable, and
+  awaiting it in a later request throws "This promise was created by a request that has since ended".
 - `AUTH_SECRET` must be supplied to the Worker for sessions to work (`--var AUTH_SECRET:...` or `worker/.dev.vars`).
 - Reuse the existing API client in `src/api/base44Client.js` before adding new API paths.
 - Accounts exported from the old Base44 app are loaded with `node worker/scripts/import-legacy-users.mjs <users.csv> [--remote]`. They carry no password (Base44 never exported them), so each user sets one from **Forgot password?**; without `RESEND_API_KEY` the Worker only logs the reset link.
 - Run the relevant checks from `package.json` before finishing code changes.
+
+## Email and One-Time Codes
+
+- Every transactional email (login codes, password resets, loan-limit, loan, promotional and
+  repayment-reminder emails) goes through `sendMail()` in `worker/src/mailer.js`. It uses Resend
+  when `RESEND_API_KEY` is set, otherwise the Gmail API when `GMAIL_CLIENT_ID`,
+  `GMAIL_CLIENT_SECRET` and `GMAIL_REFRESH_TOKEN` are set. With no provider the message (including
+  the code or reset link) is written to the Worker log as `[mail:skipped] …` and the call throws, so
+  admin emails report the failure instead of a false success. `MAIL_FROM` overrides the sender.
+- The sender is `SDL <no-reply@shubhdhanlakshmi.com>`, a domain verified at resend.com/domains.
+  If that verification lapses, Resend refuses every send with 403 "domain is not verified" and the
+  Worker logs `OTP email failed: …`.
+- Emailed one-time codes live in the `email_otps` table (`worker/migrations/0003_email_otp.sql`).
+  `POST /api/auth/otp/request` and `POST /api/auth/otp/verify` take `{ email, code, purpose }` with
+  purpose `login` or `reset`. Codes are six digits, expire in 10 minutes, allow 5 attempts, are
+  single use, and are capped at three sends per address per 10 minutes. A `reset` verification
+  returns a `reset_token` for `POST /api/auth/password-reset/confirm`.
+- The login screen offers emailed-code sign-in next to the password form, and Forgot Password uses
+  the code flow. The emailed reset link (`/reset-password?token=…`) still works; it is built from
+  the request's `Origin`, falling back to `APP_BASE_URL`.
+- Existing databases need `npm run db:migrate:local` (or `npm run db:migrate` for the deployed D1)
+  to create `email_otps`; a fresh database gets it from the schema bootstrap.
 
 ## Deployment Notes
 
