@@ -10,6 +10,7 @@
     "deploy": "vite build && wrangler deploy --config worker/wrangler.jsonc",
     "db:migrate": "wrangler d1 migrations apply DB --remote --config worker/wrangler.jsonc",
     "db:migrate:local": "wrangler d1 migrations apply DB --local --config worker/wrangler.jsonc",
+    "secret:auth": "wrangler secret put AUTH_SECRET --config worker/wrangler.jsonc",
     "entities:generate": "node worker/scripts/generate-entities.mjs",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",

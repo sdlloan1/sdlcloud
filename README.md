@@ -104,6 +104,23 @@ only apply to a host that trusts Supabase's certificate. The Worker does not rea
 Without `RESEND_API_KEY` the Worker logs outgoing mail instead of sending it, so the app stays
 usable while email is not configured.
 
+### Login says “AUTH_SECRET is not configured”
+
+That error is raised by the deployed Worker (`worker/src/auth.js`), not by the app: the Worker has no
+`AUTH_SECRET`, so it cannot sign sessions. Cloudflare stores secrets per Worker — a value in a local
+`.dev.vars` or in another environment never reaches production.
+
+Fastest fix, no terminal: **Workers & Pages → sdlcloud → Settings → Variables and Secrets → Add →
+Secret**, name `AUTH_SECRET`, value = a long random string. Save. No redeploy is needed.
+
+From a terminal: `npm run secret:auth` (same as `npx wrangler secret put AUTH_SECRET --config
+worker/wrangler.jsonc`). The `--config` flag matters — without it Wrangler targets a different Worker.
+
+Check it: `/api/health` reports `"auth_secret":true` once the secret is set on the Worker that serves
+the site (it shows `false` until this version is deployed). A `true` on one URL and a login error on
+another means the secret went to a different Worker or Cloudflare account. Keep the value stable:
+changing it signs every user out.
+
 ### Deploy from a phone (no computer)
 
 Everything below happens in a mobile browser (Cloudflare dashboard + github.com) — no terminal.

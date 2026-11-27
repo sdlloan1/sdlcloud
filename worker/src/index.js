@@ -115,7 +115,11 @@ async function handleApi(request, env, url) {
   const parts = url.pathname.replace(/^\/api\/?/, "").split("/").filter(Boolean);
   const method = request.method;
 
-  if (parts[0] === "health") return json({ ok: true, time: new Date().toISOString() });
+  if (parts[0] === "health") {
+    // Reported so a Worker missing its signing key is visible from a browser,
+    // before anyone tries to sign in.
+    return json({ ok: true, auth_secret: Boolean(env.AUTH_SECRET), time: new Date().toISOString() });
+  }
   if (parts[0] === "auth") return handleAuth(request, env, parts.slice(1));
   if (parts[0] === "files") return handleFiles(request, env, parts.slice(1));
   if (parts[0] === "entities") return handleEntities(request, env, url, parts.slice(1));
