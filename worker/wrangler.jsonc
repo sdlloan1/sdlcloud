@@ -25,7 +25,7 @@
     }
   ],
   "vars": {
-    "APP_BASE_URL": "https://app.shubhdhanlakshmi.com",
+    "APP_BASE_URL": "https://sdlcloud.sdlloan1.workers.dev",
     "MAIL_FROM": "SDL <no-reply@shubhdhanlakshmi.com>"
   },
   "triggers": {
