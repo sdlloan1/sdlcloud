@@ -16,9 +16,12 @@ export default function AddressFields({ value = {}, onChange }) {
       setPinLoading(true);
       try {
         const response = await db.functions.invoke("lookupPincode", { pincode: val });
-        if (response.data?.city) {
-          onChange("city", response.data.city);
-          onChange("state", response.data.state);
+        // The app's own client resolves to the response body itself; older
+        // Base44 SDK responses nested it under `.data`, so accept both.
+        const data = response?.data || response;
+        if (data?.city) {
+          onChange("city", data.city);
+          onChange("state", data.state);
         } else {
           setPinError("Could not auto-fill. Please enter manually.");
         }

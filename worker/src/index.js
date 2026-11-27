@@ -77,7 +77,11 @@ export default {
     try {
       connection = createDatabase(env);
       await ensureSchema(env);
-      return await handleApi(request, { ...env, DB: connection.db }, url);
+      // Uploaded files are served back through this API, so their absolute URL must
+      // use the origin the browser is actually on (preview, custom domain), not the
+      // deployed APP_BASE_URL baked into wrangler.jsonc.
+      const requestOrigin = request.headers.get("Origin") || env.APP_BASE_URL || "";
+      return await handleApi(request, { ...env, DB: connection.db, REQUEST_ORIGIN: requestOrigin }, url);
     } catch (error) {
       const status = error.status || 500;
       if (status >= 500) console.error(error);
@@ -353,7 +357,7 @@ async function handleFiles(request, env, parts) {
     if (!file || typeof file === "string") throw httpError(400, "Attach a file");
     const key = `${crypto.randomUUID()}-${String(file.name || "upload").replace(/[^\w.-]+/g, "_")}`;
     await putFile(env, key, file);
-    return json({ file_url: `${env.APP_BASE_URL}/api/files/${key}`, file_name: file.name });
+    return json({ file_url: `${env.REQUEST_ORIGIN || env.APP_BASE_URL || ""}/api/files/${key}`, file_name: file.name });
   }
 
   if (request.method === "GET" && parts[0]) {
