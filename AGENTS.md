@@ -68,6 +68,12 @@ npx skills add base44/skills
   does not reach the deployed Worker; set it on the Worker itself (`npm run secret:auth`, or
   dashboard → Variables and Secrets). `/api/health` reports `auth_secret` so a missing key shows up
   without attempting a login.
+- File uploads need `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` on the Worker too, and they are
+  separate from the Base44 sandbox copies. Without them `POST /api/files` answers 503 "File storage is
+  not configured" and every upload screen shows a generic "Upload failed", so set them with
+  `npx wrangler secret put SUPABASE_URL --config worker/wrangler.jsonc` and
+  `npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config worker/wrangler.jsonc`.
+  `/api/health` reports `storage` so the gap is visible before anyone tries an upload.
 - Deploy with `npx wrangler deploy --config worker/wrangler.jsonc` (or `npm run deploy`). Without
   `--config` Wrangler finds no root config and deploys the SPA only, so `/api/health` returns the
   app's HTML instead of JSON.
