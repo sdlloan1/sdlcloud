@@ -120,6 +120,25 @@ export const db = {
       return request("/auth/password-reset/request", { method: "POST", body: { email } });
     },
 
+    async requestLoginCode(email) {
+      return request("/auth/otp/request", { method: "POST", body: { email, purpose: "login" } });
+    },
+
+    async loginWithCode(email, code) {
+      const data = await request("/auth/otp/verify", { method: "POST", body: { email, code, purpose: "login" } });
+      this.setToken(data.access_token);
+      return data.user;
+    },
+
+    async requestResetCode(email) {
+      return request("/auth/otp/request", { method: "POST", body: { email, purpose: "reset" } });
+    },
+
+    async verifyResetCode(email, code) {
+      const data = await request("/auth/otp/verify", { method: "POST", body: { email, code, purpose: "reset" } });
+      return data.reset_token;
+    },
+
     async resetPassword({ resetToken, newPassword }) {
       const data = await request("/auth/password-reset/confirm", {
         method: "POST",

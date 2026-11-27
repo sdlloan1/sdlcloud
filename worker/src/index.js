@@ -11,18 +11,22 @@ import {
   currentUser,
   findUserByEmail,
   findUserRow,
+  generateOtp,
   generateTotpSecret,
+  hashOtp,
   hashPassword,
   hashRecoveryCode,
   httpError,
   publicUser,
   randomCode,
+  randomToken,
   requireUser,
   totpUri,
   verifyPassword,
   verifyTotp,
 } from "./auth.js";
 import { sendMail } from "./mailer.js";
+import { otpEmail } from "./shared/emailTemplate.js";
 import * as exportToGoogleSheet from "./functions/exportToGoogleSheet.js";
 import * as generateLandingPage from "./functions/generateLandingPage.js";
 import * as getReferralDashboard from "./functions/getReferralDashboard.js";
@@ -57,6 +61,10 @@ const functions = {
 
 const json = (body, status = 200, headers = {}) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...headers } });
+
+const OTP_TTL_MS = 10 * 60 * 1000;
+const OTP_WINDOW_MS = 10 * 60 * 1000;
+const OTP_MAX_ATTEMPTS = 5;
 
 export default {
   async fetch(request, env, ctx) {
@@ -184,22 +192,95 @@ async function handleAuth(request, env, parts) {
     return json({ user: await store.update("User", user.id, body) });
   }
 
+  // Emailed one-time codes: "login" signs the user in, "reset" hands back a
+  // short-lived token for the set-new-password screen.
+  if (route === "POST otp/request") {
+    const body = await request.json().catch(() => ({}));
+    const email = String(body.email || "").trim().toLowerCase();
+    const purpose = body.purpose === "reset" ? "reset" : "login";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw httpError(400, "Enter a valid email address");
+    const row = await findUserByEmail(env, email);
+    if (row && row.status !== "blocked") {
+      const recent = await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM email_otps WHERE lower(email) = ? AND purpose = ? AND created_at > ?",
+      ).bind(email, purpose, new Date(Date.now() - OTP_WINDOW_MS).toISOString()).first();
+      // Three codes per address per ten minutes keeps this from becoming a mail relay.
+      if (Number(recent?.count || 0) < 3) {
+        const code = generateOtp();
+        const now = new Date().toISOString();
+        await env.DB.prepare(
+          "INSERT INTO email_otps (id, email, purpose, code_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        ).bind(
+          crypto.randomUUID(),
+          email,
+          purpose,
+          await hashOtp(env, email, code),
+          new Date(Date.now() + OTP_TTL_MS).toISOString(),
+          now,
+        ).run();
+        await sendMail(env, {
+          to: row.email,
+          subject: purpose === "reset" ? "Your SDL password reset code" : "Your SDL login code",
+          html: otpEmail({ code, purpose }),
+          text: `${code} is your SDL ${purpose === "reset" ? "password reset" : "login"} code. It expires in 10 minutes.`,
+        }).catch((error) => console.error("OTP email failed:", error.message));
+      }
+    }
+    // Same answer whether or not the account exists.
+    return json({ ok: true });
+  }
+
+  if (route === "POST otp/verify") {
+    const body = await request.json().catch(() => ({}));
+    const email = String(body.email || "").trim().toLowerCase();
+    const code = String(body.code || "").replace(/\s/g, "");
+    const purpose = body.purpose === "reset" ? "reset" : "login";
+    if (!/^\d{6}$/.test(code)) throw httpError(400, "Enter the 6-digit code from your email");
+    const otp = await env.DB.prepare(
+      "SELECT * FROM email_otps WHERE lower(email) = ? AND purpose = ? AND used_at IS NULL ORDER BY created_at DESC LIMIT 1",
+    ).bind(email, purpose).first();
+    if (!otp || otp.expires_at < new Date().toISOString()) {
+      throw httpError(400, "That code is invalid or has expired. Request a new one.", "otp_invalid");
+    }
+    if (Number(otp.attempts || 0) >= OTP_MAX_ATTEMPTS) {
+      throw httpError(429, "Too many attempts with this code. Request a new one.", "otp_locked");
+    }
+    if ((await hashOtp(env, email, code)) !== otp.code_hash) {
+      await env.DB.prepare("UPDATE email_otps SET attempts = attempts + 1 WHERE id = ?").bind(otp.id).run();
+      throw httpError(400, "That code is invalid or has expired. Request a new one.", "otp_invalid");
+    }
+    await env.DB.prepare("UPDATE email_otps SET used_at = ? WHERE id = ?").bind(new Date().toISOString(), otp.id).run();
+    const row = await findUserByEmail(env, email);
+    if (!row || row.status === "blocked") throw httpError(403, "This account cannot sign in");
+    if (purpose === "reset") {
+      const token = randomToken();
+      await env.DB.prepare("INSERT INTO password_resets (token, user_id, expires_at) VALUES (?, ?, ?)")
+        .bind(token, row.id, new Date(Date.now() + 60 * 60 * 1000).toISOString()).run();
+      return json({ ok: true, reset_token: token });
+    }
+    const session = await createSession(publicUser(row), env);
+    return json({ access_token: session.token, user: publicUser(row) }, 200, { "Set-Cookie": session.cookie });
+  }
+
   if (route === "POST password-reset/request") {
     const body = await request.json().catch(() => ({}));
     const row = await findUserByEmail(env, body.email);
     // Same response whether or not the account exists.
     if (row) {
-      const token = [...crypto.getRandomValues(new Uint8Array(32))].map((b) => b.toString(16).padStart(2, "0")).join("");
+      const token = randomToken();
       const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
       await env.DB.prepare("INSERT INTO password_resets (token, user_id, expires_at) VALUES (?, ?, ?)")
         .bind(token, row.id, expires).run();
-      const link = `${env.APP_BASE_URL}/reset-password?token=${token}`;
+      // Prefer the origin the request came from, so the link points at the app the
+      // user is actually using (preview, custom domain) instead of the deployed default.
+      const origin = request.headers.get("Origin") || env.APP_BASE_URL;
+      const link = `${origin}/reset-password?token=${token}`;
       await sendMail(env, {
         to: row.email,
         subject: "Reset your SDL password",
         html: `<p>Use this link within an hour to set a new password:</p><p><a href="${link}">${link}</a></p>`,
-      });
-      if (!env.RESEND_API_KEY) console.log(`[password-reset] ${row.email} -> ${link}`);
+        text: `Open this link within an hour to set a new SDL password: ${link}`,
+      }).catch((error) => console.error("Password reset email failed:", error.message));
     }
     return json({ ok: true });
   }

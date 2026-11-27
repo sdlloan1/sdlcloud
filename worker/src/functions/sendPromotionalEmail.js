@@ -1,28 +1,5 @@
 
-function base64UrlEncode(str) {
-  const bytes = new TextEncoder().encode(str);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function buildRawMessage(to, from, subject, htmlBody) {
-  const encodedSubject = /[^\x00-\x7F]/.test(subject)
-    ? `=?utf-8?B?${base64UrlEncode(subject)}?=`
-    : subject;
-  const mime = [
-    `From: ${from}`,
-    `To: ${to}`,
-    `Subject: ${encodedSubject}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: text/html; charset=utf-8`,
-    ``,
-    htmlBody,
-  ].join("\r\n");
-  return base64UrlEncode(mime);
-}
+import { sendMail } from "../mailer.js";
 
 export default async function (req, ctx) {
   const db = ctx.db;
@@ -74,12 +51,6 @@ export default async function (req, ctx) {
       return Response.json({ error: "No recipients found with email addresses" }, { status: 400 });
     }
 
-    // Get Gmail access token
-    const { accessToken } = await db.asServiceRole.connectors.getConnection("gmail");
-    const from = fromName
-      ? `${fromName} <shubhdhanlakshmifund@gmail.com>`
-      : "shubhdhanlakshmifund@gmail.com";
-
     let sent = 0;
     let failed = 0;
     const failedEmails = [];
@@ -87,21 +58,8 @@ export default async function (req, ctx) {
     for (const r of recipients) {
       try {
         const personalizedBody = htmlBody.replace(/\{\{name\}\}/g, r.name);
-        const rawMessage = buildRawMessage(r.email, from, subject, personalizedBody);
-        const sendRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ raw: rawMessage }),
-        });
-        if (sendRes.ok) {
-          sent++;
-        } else {
-          failed++;
-          failedEmails.push(r.email);
-        }
+        await sendMail(ctx.env, { to: r.email, subject, html: personalizedBody, fromName });
+        sent++;
       } catch (e) {
         failed++;
         failedEmails.push(r.email);

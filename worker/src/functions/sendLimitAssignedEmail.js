@@ -1,4 +1,5 @@
-import { emailHeader, emailFooter, buildRawMessage } from "../shared/emailTemplate.js";
+import { emailHeader, emailFooter } from "../shared/emailTemplate.js";
+import { sendMail } from "../mailer.js";
 
 function limitAssignedEmail({ borrowerName, limit }) {
   return `<!DOCTYPE html><html lang="en"><body style="margin:0; padding:0; background-color:#fdf1e9; font-family: Arial, Helvetica, sans-serif;">
@@ -46,30 +47,7 @@ export default async function (req, ctx) {
     const subject = "SDL Loan Limit Assigned";
     const emailBody = limitAssignedEmail({ borrowerName, limit: String(limit) });
 
-    const { accessToken } = await db.asServiceRole.connectors.getConnection("gmail");
-    const rawMessage = buildRawMessage(
-      borrower.email,
-      "shubhdhanlakshmifund@gmail.com",
-      subject,
-      emailBody
-    );
-
-    const sendRes = await fetch(
-      "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ raw: rawMessage }),
-      }
-    );
-
-    if (!sendRes.ok) {
-      const errText = await sendRes.text();
-      return Response.json({ error: `Gmail send failed: ${errText}` }, { status: 500 });
-    }
+    await sendMail(ctx.env, { to: borrower.email, subject, html: emailBody });
 
     return Response.json({ success: true, sentTo: borrower.email });
   } catch (error) {

@@ -210,4 +210,24 @@ export function randomCode() {
   return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
 }
 
+// Six-digit code emailed for passwordless login and password resets.
+export function generateOtp() {
+  const value = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
+  return String(value).padStart(6, "0");
+}
+
+// Codes are stored hashed, so a leaked database row cannot be replayed.
+export async function hashOtp(env, email, code) {
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    await hmacKey(env.AUTH_SECRET),
+    encoder.encode(`${String(email || "").trim().toLowerCase()}:${String(code || "").trim()}`),
+  );
+  return toBase64Url(signature);
+}
+
+export function randomToken(bytes = 32) {
+  return [...crypto.getRandomValues(new Uint8Array(bytes))].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export { AUTH_COLUMNS };
