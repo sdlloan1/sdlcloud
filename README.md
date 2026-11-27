@@ -124,16 +124,32 @@ Everything below happens in a mobile browser (Cloudflare dashboard + github.com)
 
 ## Data cutover from Base44
 
-The Worker no longer talks to the Base44 backend. To move production data:
+The Worker no longer talks to the Base44 backend; data lives in D1. To move production data:
 
 1. Regenerate the schema after any entity change: `npm run entities:generate` (rewrites
    `worker/src/entities.generated.js`, `worker/migrations/0001_init.sql`, `supabase/schema.sql` and
    `supabase/seed.sql` from `base44/entities/`).
-2. Export each entity from the Base44 dashboard as JSON, map it to the table columns, and load it
-   in the Supabase **SQL Editor** (or with `psql "$SUPABASE_DB_URL" --file <file.sql>`).
-3. Re-upload files that lived in Base44 storage (loan agreements, screenshots) to the `sdl-files`
+2. Apply the schema to the target database: `npm run db:migrate` for the deployed Worker,
+   `npm run db:migrate:local` for local development. Until it runs, every API call answers
+   "The database has no tables yet" (`D1_ERROR: no such table`).
+3. Import the user accounts exported from Base44 (dashboard → Users → export CSV):
+
+   ```bash
+   node worker/scripts/import-legacy-users.mjs <users.csv>            # local D1
+   node worker/scripts/import-legacy-users.mjs <users.csv> --remote   # deployed D1
+   ```
+
+   Rows are matched by email and existing accounts are skipped, so the import is safe to re-run.
+   Base44 managed the passwords and does not export them, so every imported account starts without
+   one: the user opens **Forgot password?** on the login page, gets a link and sets their own.
+   Reset links are emailed when `RESEND_API_KEY` is set; otherwise the Worker logs the link as
+   `[password-reset] <email> -> <link>` (`npx wrangler tail --config worker/wrangler.jsonc` for the
+   deployed Worker), which the admin can forward.
+4. Export each remaining entity from the Base44 dashboard as JSON, map it to the table columns and
+   load it with `npx wrangler d1 execute DB --remote --config worker/wrangler.jsonc --file <file.sql>`.
+5. Re-upload files that lived in Base44 storage (loan agreements, screenshots) to the `sdl-files`
    bucket in Supabase Storage.
-4. Set `AUTH_SECRET` once and keep it stable — changing it signs every user out.
+6. Set `AUTH_SECRET` once and keep it stable — changing it signs every user out.
 
 ## Legacy Base44 workflow
 

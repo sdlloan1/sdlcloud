@@ -8,9 +8,10 @@ const PBKDF2_ITERATIONS = 100000;
 
 const encoder = new TextEncoder();
 
-export function httpError(status, message) {
+export function httpError(status, message, code) {
   const error = new Error(message);
   error.status = status;
+  if (code) error.code = code;
   return error;
 }
 
@@ -49,6 +50,11 @@ export async function verifyPassword(password, stored) {
 }
 
 async function hmacKey(secret) {
+  // Without a secret every session token would be signed with an empty key; fail
+  // with the fix instead of a raw WebCrypto error on the login screen.
+  if (!secret) {
+    throw httpError(500, "AUTH_SECRET is not configured for this Worker. Set it with `npx wrangler secret put AUTH_SECRET --config worker/wrangler.jsonc`.");
+  }
   return crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
 }
 

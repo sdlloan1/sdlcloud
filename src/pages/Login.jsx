@@ -15,12 +15,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [needsCode, setNeedsCode] = useState(false);
+  const [needsPassword, setNeedsPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setNeedsPassword(false);
     setLoading(true);
     try {
       await db.auth.loginViaEmailPassword(email, password, code || undefined);
@@ -29,6 +31,9 @@ export default function Login() {
     } catch (err) {
       if (err.code === "mfa_required") {
         setNeedsCode(true);
+        setError("");
+      } else if (err.code === "password_not_set") {
+        setNeedsPassword(true);
         setError("");
       } else {
         setError(err.message || "Invalid email or password");
@@ -52,6 +57,17 @@ export default function Login() {
       {error && (
         <div className="mb-4 p-3 rounded-xl bg-red-50 text-sdl-red text-sm text-center neu-inset-sm">
           {error}
+        </div>
+      )}
+      {needsPassword && (
+        <div className="mb-4 p-3 rounded-xl bg-amber-50 text-sm text-center neu-inset-sm">
+          <p className="text-slate-600 mb-1">This account was imported from the old app and has no password yet.</p>
+          <Link
+            to={`/forgot-password?email=${encodeURIComponent(email)}`}
+            className="sdl-gradient-text font-semibold"
+          >
+            Set your password
+          </Link>
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
