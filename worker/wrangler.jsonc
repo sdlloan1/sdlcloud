@@ -14,7 +14,7 @@
     {
       "binding": "DB",
       "database_name": "sdl",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "181e1d91-f509-437e-80bf-93e8b2dc11a9",
       "migrations_dir": "migrations"
     }
   ],
