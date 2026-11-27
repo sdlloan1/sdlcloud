@@ -122,7 +122,15 @@ async function handleApi(request, env, url) {
   if (parts[0] === "health") {
     // Reported so a Worker missing its signing key is visible from a browser,
     // before anyone tries to sign in.
-    return json({ ok: true, auth_secret: Boolean(env.AUTH_SECRET), time: new Date().toISOString() });
+    // Storage is reported for the same reason: a Worker deployed without the
+    // Supabase keys answers every file upload with 503, which shows up as a
+    // generic "Upload failed" on the KYC screen.
+    return json({
+      ok: true,
+      auth_secret: Boolean(env.AUTH_SECRET),
+      storage: storageConfigured(env),
+      time: new Date().toISOString(),
+    });
   }
   if (parts[0] === "auth") return handleAuth(request, env, parts.slice(1));
   if (parts[0] === "files") return handleFiles(request, env, parts.slice(1));

@@ -23,7 +23,9 @@ function FileUploadBox({ label, value, onChange }) {
       const { file_url } = await db.integrations.Core.UploadFile({ file });
       onChange(file_url);
     } catch (err) {
-      alert("Upload failed. Please try again.");
+      // Show the server's reason ("File storage is not configured", "Authentication
+      // required", …) so a failed upload can be diagnosed instead of retried blindly.
+      alert(err?.message || "Upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
