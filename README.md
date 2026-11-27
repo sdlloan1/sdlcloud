@@ -15,15 +15,17 @@ Supabase Postgres for data and Supabase Storage for uploaded files.
 
 ## Run locally
 
-Install dependencies once, apply the D1 migrations to the local SQLite database, then run the
-Worker API and the Vite dev server:
+Install dependencies once, then run the Worker API and the Vite dev server:
 
 ```bash
 npm install
-npm run db:migrate:local   # apply worker/migrations to the local D1 database
 npm run dev:api            # Worker API on http://localhost:8787 (local D1 + R2 emulation)
 npm run dev                # Vite on http://localhost:3000, proxies /api to :8787
 ```
+
+The Worker applies `worker/migrations` itself the first time it reaches a database with no tables
+(see `worker/src/schema-bootstrap.js`), so `npm run db:migrate:local` is only needed to seed a
+database ahead of time.
 
 `AUTH_SECRET` signs session tokens and is required for login. Pass a development value to the
 Worker (or put it in an untracked `worker/.dev.vars`):
@@ -130,8 +132,8 @@ The Worker no longer talks to the Base44 backend; data lives in D1. To move prod
    `worker/src/entities.generated.js`, `worker/migrations/0001_init.sql`, `supabase/schema.sql` and
    `supabase/seed.sql` from `base44/entities/`).
 2. Apply the schema to the target database: `npm run db:migrate` for the deployed Worker,
-   `npm run db:migrate:local` for local development. Until it runs, every API call answers
-   "The database has no tables yet" (`D1_ERROR: no such table`).
+   `npm run db:migrate:local` for local development. Not strictly required: the Worker applies the
+   same migration files on the first request against an empty database.
 3. Import the user accounts exported from Base44 (dashboard → Users → export CSV):
 
    ```bash
