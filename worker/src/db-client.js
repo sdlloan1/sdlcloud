@@ -3,6 +3,7 @@
 // db.integrations.Core.UploadFile.
 import { EntityStore } from "./store.js";
 import { httpError } from "./auth.js";
+import { putFile, storageConfigured } from "./storage.js";
 
 // filter(query, sort, limit) also accepts the (query, { sort, limit }) form.
 function options(sort, limit) {
@@ -85,11 +86,9 @@ export function createDbClient(env, { user = null, serviceRole = false } = {}) {
     integrations: {
       Core: {
         UploadFile: async ({ file }) => {
-          if (!file || !env.FILES) throw httpError(503, "File storage is not configured");
+          if (!file || !storageConfigured(env)) throw httpError(503, "File storage is not configured");
           const key = `${crypto.randomUUID()}-${String(file.name || "upload").replace(/[^\w.-]+/g, "_")}`;
-          await env.FILES.put(key, file.stream(), {
-            httpMetadata: { contentType: file.type || "application/octet-stream" },
-          });
+          await putFile(env, key, file);
           return { file_url: `${env.APP_BASE_URL}/api/files/${key}`, file_name: file.name };
         },
       },

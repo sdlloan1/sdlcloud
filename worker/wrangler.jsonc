@@ -18,12 +18,6 @@
       "migrations_dir": "migrations"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "FILES",
-      "bucket_name": "sdl-files"
-    }
-  ],
   "vars": {
     "APP_BASE_URL": "https://sdlcloud.sdlloan1.workers.dev",
     "MAIL_FROM": "SDL <no-reply@shubhdhanlakshmi.com>"
