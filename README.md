@@ -93,8 +93,10 @@ Everything below happens in a mobile browser (Cloudflare dashboard + github.com)
    placeholder `database_id` with the ID from step 1 and set `APP_BASE_URL` to your public URL
    (`https://<worker-name>.<subdomain>.workers.dev`, or a custom domain). Commit to `main` — that
    push builds and deploys.
-4. **Load the schema once.** D1 → `sdl` → *Console*: paste all of `worker/migrations/0001_init.sql`,
-   run it, then do the same with `0002_app_settings_seed.sql`.
+4. **Load the schema once.** D1 → `sdl` → *Console*. Paste the **contents** of
+   `worker/migrations/0001_init.sql` (open the file on GitHub → **Raw** → select all → copy; the
+   file path itself is not SQL and fails with a syntax error) and run it — it executes 66
+   statements. Then paste the contents of `0002_app_settings_seed.sql` the same way.
 5. **Add the login secret.** Worker → Settings → *Variables and Secrets* → **Add** → Secret
    `AUTH_SECRET`, value = a long random string from any password generator (keep it stable, changing
    it signs everyone out). Optional: `RESEND_API_KEY`, `GMAIL_*`, `GOOGLE_*`.
