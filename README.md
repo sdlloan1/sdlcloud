@@ -27,6 +27,10 @@ The Worker applies `worker/migrations` itself the first time it reaches a databa
 (see `worker/src/schema-bootstrap.js`), so `npm run db:migrate:local` is only needed to seed a
 database ahead of time.
 
+`npm run dev` starts only Vite. In the Base44 preview sandbox (`BASE44_PREVIEW_MODE=1`) the same
+command also starts the Worker on :8787 and loads its secrets from `/run/base44/app.env` via
+Wrangler's `--env-file`; with the flag unset the command behaves exactly like `vite` alone.
+
 `AUTH_SECRET` signs session tokens and is required for login. Pass a development value to the
 Worker (or put it in an untracked `worker/.dev.vars`):
 
